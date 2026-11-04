@@ -1,0 +1,26 @@
+name: materialcraft
+description: >-
+  Runtime widgets and theme helpers for Flutter themes generated with
+  MaterialCraft: button skins with gradients and CSS-like shadows, hard-shadow
+  borders, custom switch and slider shapes. Built on top of Material.
+version: 0.1.0
+repository: https://github.com/danieleorlando/materialcraft/tree/main/packages/materialcraft
+issue_tracker: https://github.com/danieleorlando/materialcraft/issues
+topics:
+  - theme
+  - material-design
+  - design-system
+  - ui
+
+environment:
+  sdk: ^3.9.2
+  flutter: ">=3.35.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
