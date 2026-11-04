@@ -11,3 +11,5 @@ void downloadText(
 }) {}
 
 Future<String?> pickTextFile() async => null;
+
+void openUrl(String url) {}

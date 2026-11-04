@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../model/surface_config.dart';
 import '../model/theme_config.dart';
+import 'about_dialog.dart';
 import 'editor_controller.dart';
 import 'export_dialog.dart';
 import 'new_theme_wizard.dart';
@@ -119,6 +120,19 @@ class EditorPageState extends State<EditorPage> {
         surfaceTintColor: Colors.transparent,
         shape: Border(bottom: BorderSide(color: cs.outlineVariant)),
         actions: [
+          TextButton(
+            onPressed: () => showAboutMaterialCraft(context),
+            child: const Text('by Daniele Orlando'),
+          ),
+          IconButton(
+            tooltip: 'MaterialCraft on GitHub',
+            onPressed: () => openUrl(repoUrl),
+            icon: const Icon(Icons.star_outline, size: 20),
+          ),
+          SizedBox(
+            height: 24,
+            child: VerticalDivider(width: 24, color: cs.outlineVariant),
+          ),
           TextButton.icon(
             onPressed: _newTheme,
             icon: const Icon(Icons.auto_awesome_outlined, size: 18),

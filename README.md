@@ -116,7 +116,13 @@ MaterialCraft is not affiliated with these projects.
 
 ## Author
 
-Built by **Daniele Orlando** ([@danieleorlando](https://github.com/danieleorlando)).
+Built by **Daniele Orlando**, a developer who builds iOS, Android and web apps
+from the first idea to the store.
+
+Need an app, an MVP or a design system?
+[danieleorlando.me](https://danieleorlando.me) ·
+[LinkedIn](https://www.linkedin.com/in/daniele-orlando-2b491014/) ·
+[GitHub](https://github.com/danieleorlando)
 
 ## License
 

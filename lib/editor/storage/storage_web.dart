@@ -67,3 +67,8 @@ Future<String?> pickTextFile() {
   input.click();
   return done.future;
 }
+
+/// Opens [url] in a new tab.
+void openUrl(String url) {
+  web.window.open(url, '_blank', 'noopener');
+}

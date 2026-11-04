@@ -77,6 +77,20 @@ void main() {
     expect(find.text('Pill-shaped buttons'), findsOneWidget);
   });
 
+  testWidgets('About: author, services and links', (tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(const MaterialCraftApp());
+    await tester.tap(find.text('by Daniele Orlando'));
+    await tester.pumpAndSettle();
+    expect(find.text('Made by Daniele Orlando'), findsOneWidget);
+    expect(find.text('Work with me'), findsOneWidget);
+    expect(find.text('LinkedIn'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   test('export without overrides returns the base theme', () {
     final code = exportDart(ThemeConfig());
     expect(code, contains('abstract final class AppTheme'));
