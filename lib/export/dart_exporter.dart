@@ -136,7 +136,8 @@ String exportDart(ThemeConfig c, {bool usePackage = false}) {
 
   // --- file ----------------------------------------------------------------
   final out = StringBuffer();
-  out.writeln('// Generated with MaterialCraft.');
+  out.writeln('// Generated with MaterialCraft by Daniele Orlando.');
+  out.writeln('// https://materialcraft.danieleorlando.me');
   // The same instructions as the export's "How to use it" tab.
   for (final note in usageNotes(c, usePackage: usePackage)) {
     out.writeln('//');

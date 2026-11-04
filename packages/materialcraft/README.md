@@ -2,7 +2,8 @@
 
 Runtime widgets and theme helpers for Flutter themes generated with
 [**MaterialCraft**](https://github.com/danieleorlando/materialcraft), a visual
-theme editor for Material 3.
+theme editor for Material 3
+([try it online](https://materialcraft.danieleorlando.me)).
 
 MaterialCraft exports a plain `app_theme.dart`. In *standalone* mode the file
 bundles everything it needs. In *package* mode it imports this package
