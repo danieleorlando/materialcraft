@@ -6,7 +6,7 @@ every component with a live light/dark preview, and export a single
 
 **[Try it in your browser → materialcraft.danieleorlando.me](https://materialcraft.danieleorlando.me)**
 
-![MaterialCraft editor with the Neobrutalism style](docs/screenshots/editor.jpg)
+![Pick a style, change the palette and the radius, export the Dart code](docs/screenshots/demo.gif)
 
 MaterialCraft stays **on top of Material**: the export is a regular
 `ThemeData` for `MaterialApp`, so `FilledButton`, `Card`, `TextField` and the
@@ -16,6 +16,8 @@ adds a small explicit helper and explains how to use it. It never replaces or
 shadows a Material widget.
 
 ## Features
+
+![MaterialCraft editor with the Neobrutalism style](docs/screenshots/editor.jpg)
 
 - **Four starting styles**, rebuilt from their sources:
   - **Material 3**: Flutter's defaults, with a seed color and optional key
