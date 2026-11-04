@@ -162,6 +162,10 @@ String exportDart(ThemeConfig c, {bool usePackage = false}) {
   out.writeln("import 'package:flutter/material.dart';");
   if (usePackage) {
     out.writeln("import 'package:materialcraft/materialcraft.dart';");
+    // Re-export the package: files that import only app_theme.dart can use
+    // context.buttonStyle, AppButtonKind, AppSwitch, … as the header shows.
+    out.writeln();
+    out.writeln("export 'package:materialcraft/materialcraft.dart';");
   }
   out.writeln();
   out.writeln('abstract final class AppTheme {');

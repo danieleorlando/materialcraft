@@ -179,6 +179,11 @@ void main() {
           contains("import 'package:materialcraft/materialcraft.dart';"),
           reason: p.name,
         );
+        expect(
+          code,
+          contains("export 'package:materialcraft/materialcraft.dart';"),
+          reason: '${p.name}: re-export for files importing app_theme.dart',
+        );
         for (final cls in [
           'class ButtonSkin ',
           'class AppButtonStyles ',
