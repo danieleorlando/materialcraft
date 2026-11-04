@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../export/dart_exporter.dart';
 import '../export/usage_notes.dart';
 import '../model/theme_config.dart';
+import 'storage/storage.dart';
 import 'widgets/usage_callout.dart';
 
 Future<void> showExportDialog(BuildContext context, ThemeConfig config) {
@@ -62,10 +63,11 @@ class _ExportDialogState extends State<_ExportDialog> {
                           ),
                           Text(
                             _usePackage
-                                ? 'Add the materialcraft package, copy the '
-                                      'file and use AppTheme.light() / '
-                                      'AppTheme.dark() in MaterialApp.'
-                                : 'Copy the file into your project and use '
+                                ? 'Add the materialcraft package, put the '
+                                      'file in your project and use '
+                                      'AppTheme.light() / AppTheme.dark() in '
+                                      'MaterialApp.'
+                                : 'Put the file in your project and use '
                                       'AppTheme.light() / AppTheme.dark() in '
                                       'MaterialApp.',
                             style: theme.textTheme.bodySmall?.copyWith(
@@ -97,6 +99,16 @@ class _ExportDialogState extends State<_ExportDialog> {
                     ),
                     const SizedBox(width: 12),
                     FilledButton.icon(
+                      onPressed: () => downloadText(
+                        'app_theme.dart',
+                        code,
+                        mimeType: 'text/plain',
+                      ),
+                      icon: const Icon(Icons.download, size: 18),
+                      label: const Text('Download'),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
                       onPressed: () async {
                         await Clipboard.setData(ClipboardData(text: code));
                         if (context.mounted) {

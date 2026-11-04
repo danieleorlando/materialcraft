@@ -24,11 +24,12 @@ void writeAutosave(String json) {
 }
 
 /// Downloads [text] as the file [filename].
-void downloadText(String filename, String text) {
-  final blob = web.Blob(
-    [text.toJS].toJS,
-    web.BlobPropertyBag(type: 'application/json'),
-  );
+void downloadText(
+  String filename,
+  String text, {
+  String mimeType = 'application/json',
+}) {
+  final blob = web.Blob([text.toJS].toJS, web.BlobPropertyBag(type: mimeType));
   final url = web.URL.createObjectURL(blob);
   final a = web.HTMLAnchorElement()
     ..href = url

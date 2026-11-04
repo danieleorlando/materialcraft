@@ -4,6 +4,10 @@ String? readAutosave() => null;
 
 void writeAutosave(String json) {}
 
-void downloadText(String filename, String text) {}
+void downloadText(
+  String filename,
+  String text, {
+  String mimeType = 'application/json',
+}) {}
 
 Future<String?> pickTextFile() async => null;
