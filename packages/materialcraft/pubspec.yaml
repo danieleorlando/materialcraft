@@ -2,7 +2,7 @@ name: materialcraft
 description: >-
   Runtime widgets for MaterialCraft themes: button skins with gradients and
   CSS-like shadows, hard-shadow borders, custom switches and sliders.
-version: 0.1.0
+version: 0.1.1
 homepage: https://materialcraft.danieleorlando.me
 repository: https://github.com/danieleorlando/materialcraft/tree/main/packages/materialcraft
 issue_tracker: https://github.com/danieleorlando/materialcraft/issues
