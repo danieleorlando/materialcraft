@@ -2884,6 +2884,39 @@ void _galleryTests() {
       );
     });
 
+    test('Submit opens the gallery issue form, filled in', () {
+      final t = LayeredTheme(base: ThemePreset.neobrutalism('orange'))
+        ..globals.radius = 8;
+      final url = Uri.parse(gallerySubmissionUrl(t, '  Sunrise  '));
+      expect(url.toString(), startsWith('$galleryRepoUrl/issues/new?'));
+      final q = url.queryParameters;
+      expect(q['template'], 'gallery.yml');
+      expect(q['labels'], 'gallery');
+      expect(q['title'], '[Gallery] Sunrise');
+      expect(q['name'], 'Sunrise');
+      final link = Uri.parse(q['link']!);
+      expect(link.origin, 'https://materialcraft.danieleorlando.me');
+      final back = decodeSharePayload(link.queryParameters[shareParam]!);
+      expect(back.name, 'Sunrise');
+      expect(sameTheme(back.theme, t), isTrue);
+
+      final long = Uri.parse(gallerySubmissionUrl(t, 'x' * 60));
+      expect(long.queryParameters['name']!.length, maxGalleryNameLength);
+    });
+
+    testWidgets('Submit asks to customize an untouched theme', (tester) async {
+      await startEditor(tester);
+      await useBundledGallery(tester);
+      await tester.tap(find.text('Gallery'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Submit your theme'));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Make the theme your own first'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('the bundled gallery loads, newest first', (tester) async {
       resetGalleryCache();
       final entries = (await tester.runAsync(loadGallery))!;

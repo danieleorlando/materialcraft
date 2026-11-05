@@ -84,7 +84,7 @@ class EditorPageState extends State<EditorPage> {
   }
 
   Future<void> _showGallery() async {
-    final entry = await showGalleryDialog(context);
+    final entry = await showGalleryDialog(context, onSubmit: _submitToGallery);
     if (entry == null || !mounted) return;
     await _openTheme(copyLayeredTheme(entry.theme), entry.name, 'gallery');
   }
@@ -147,10 +147,32 @@ class EditorPageState extends State<EditorPage> {
   Future<void> _share() async {
     await Clipboard.setData(ClipboardData(text: _controller.shareLink()));
     if (!mounted) return;
-    _toast(
-      'Link copied. Anyone who opens it gets "${_controller.themeName}" in '
-      'the editor.',
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Link copied. Anyone who opens it gets "${_controller.themeName}" '
+          'in the editor.',
+        ),
+        behavior: SnackBarBehavior.floating,
+        width: 460,
+        action: SnackBarAction(
+          label: 'Submit to gallery',
+          onPressed: _submitToGallery,
+        ),
+      ),
     );
+  }
+
+  /// Opens the GitHub form that proposes the current theme for the gallery.
+  void _submitToGallery() {
+    if (!_controller.hasEdits) {
+      _toast(
+        'Make the theme your own first: the gallery is for themes you '
+        'customized.',
+      );
+      return;
+    }
+    openUrl(gallerySubmissionUrl(_controller.theme, _controller.themeName));
   }
 
   @override

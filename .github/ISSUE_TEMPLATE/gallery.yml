@@ -1,0 +1,43 @@
+name: Submit a theme to the gallery
+description: Share a theme you made with MaterialCraft. A bot checks it and opens a pull request.
+title: "[Gallery] "
+labels: ["gallery"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing! The fastest way is the **Submit your theme** button in the
+        MaterialCraft gallery, which fills this form for you. After you submit, a bot
+        checks the theme and opens a pull request; the theme appears in the gallery
+        when it's merged, with your GitHub name on it.
+  - type: input
+    id: link
+    attributes:
+      label: Theme link
+      description: In MaterialCraft click **Share** and paste the link (it contains `?t=`).
+      placeholder: https://materialcraft.danieleorlando.me/?t=1.eyJm...
+    validations:
+      required: true
+  - type: input
+    id: name
+    attributes:
+      label: Theme name
+      description: Up to 40 characters.
+      placeholder: Sunrise
+    validations:
+      required: true
+  - type: input
+    id: description
+    attributes:
+      label: Description
+      description: One sentence, up to 120 characters.
+      placeholder: Warm Neobrutalism with orange buttons that sink.
+    validations:
+      required: true
+  - type: checkboxes
+    id: license
+    attributes:
+      label: License
+      options:
+        - label: I publish this theme under the MIT license, like the rest of MaterialCraft.
+          required: true

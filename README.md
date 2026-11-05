@@ -77,6 +77,14 @@ as adding fonts or using `AppSwitch`, with before/after code.
 | --- | --- |
 | ![Choosing the starting style](docs/screenshots/wizard-style.jpg) | ![Choosing the colors](docs/screenshots/wizard-colors.jpg) |
 
+## Gallery
+
+The editor's **Gallery** shows themes made with MaterialCraft, one
+`.materialcraft.json` file per theme in [`gallery/`](gallery). To add yours,
+click **Submit your theme** in the gallery (or **Share → Submit to gallery**):
+it opens a prefilled GitHub issue. A bot checks the theme and opens a pull
+request, and the theme shows up with your GitHub name once it's merged.
+
 ## Run it locally
 
 Requires Flutter 3.35 or later.
