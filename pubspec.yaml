@@ -44,6 +44,7 @@ dependencies:
     path: packages/materialcraft
   # Download/apertura dei file di progetto e salvataggio automatico (web).
   web: ^1.1.1
+  path_drawing: ^1.0.1
 
 dev_dependencies:
   flutter_test:
