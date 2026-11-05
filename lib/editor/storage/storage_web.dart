@@ -3,8 +3,6 @@ import 'dart:js_interop';
 
 import 'package:web/web.dart' as web;
 
-import '../../model/share_link.dart';
-
 const _autosaveKey = 'materialcraft.autosave.v1';
 
 /// Last autosaved theme (null if there's none or the browser
@@ -75,17 +73,18 @@ void openUrl(String url) {
   web.window.open(url, '_blank', 'noopener');
 }
 
-/// The `?t=` value of a shared link the page was opened with.
-String? readShareParam() {
-  final value = Uri.base.queryParameters[shareParam];
+/// A parameter of the address the page was opened with (e.g. `?t=`).
+String? readUrlParam(String name) {
+  final value = Uri.base.queryParameters[name];
   return value == null || value.isEmpty ? null : value;
 }
 
-/// Removes `?t=` from the address bar, so a reload doesn't reopen it.
-void clearShareParam() {
+/// Removes [names] from the address bar, so a reload doesn't reopen them.
+void clearUrlParams(Set<String> names) {
   final uri = Uri.base;
-  if (!uri.queryParameters.containsKey(shareParam)) return;
-  final rest = Map.of(uri.queryParameters)..remove(shareParam);
+  if (!uri.queryParameters.keys.any(names.contains)) return;
+  final rest = Map.of(uri.queryParameters)
+    ..removeWhere((k, _) => names.contains(k));
   final query = rest.isEmpty ? '' : '?${Uri(queryParameters: rest).query}';
   final fragment = uri.hasFragment ? '#${uri.fragment}' : '';
   try {
@@ -96,7 +95,7 @@ void clearShareParam() {
       '${uri.path}$query$fragment',
     );
   } catch (_) {
-    // Not critical: a reload just reopens the shared theme.
+    // Not critical: a reload just reopens the same theme.
   }
 }
 

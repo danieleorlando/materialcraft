@@ -1,0 +1,16 @@
+{
+  "format": "materialcraft-theme",
+  "version": 1,
+  "name": "Ocean Nova",
+  "style": "shadcn.nova",
+  "colors": {
+    "primary": "FF1447E6"
+  },
+  "globals": {},
+  "edits": {},
+  "gallery": {
+    "author": "danieleorlando",
+    "description": "shadcn/ui Nova with the blue accent: compact and calm.",
+    "added": "2026-11-05"
+  }
+}

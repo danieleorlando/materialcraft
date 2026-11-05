@@ -1,0 +1,16 @@
+{
+  "format": "materialcraft-theme",
+  "version": 1,
+  "name": "Graphite",
+  "style": "shadcn",
+  "colors": {
+    "neutralFamily": "zinc"
+  },
+  "globals": {},
+  "edits": {},
+  "gallery": {
+    "author": "danieleorlando",
+    "description": "shadcn/ui new-york on zinc neutrals: crisp and monochrome.",
+    "added": "2026-11-05"
+  }
+}

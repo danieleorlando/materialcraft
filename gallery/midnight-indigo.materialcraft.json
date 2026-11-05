@@ -1,0 +1,19 @@
+{
+  "format": "materialcraft-theme",
+  "version": 1,
+  "name": "Midnight Indigo",
+  "style": "material3",
+  "colors": {
+    "primary": "FF3949AB"
+  },
+  "globals": {
+    "pillButtons": true,
+    "radius": 16
+  },
+  "edits": {},
+  "gallery": {
+    "author": "danieleorlando",
+    "description": "Material 3 seeded with deep indigo, pill-shaped buttons.",
+    "added": "2026-11-05"
+  }
+}

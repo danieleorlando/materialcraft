@@ -21,6 +21,8 @@ import 'package:materialcraft_app/model/theme_config.dart';
 import 'package:materialcraft_app/model/theme_layers.dart';
 import 'package:materialcraft_app/model/theme_json.dart';
 import 'package:materialcraft_app/model/share_link.dart';
+import 'package:materialcraft_app/model/gallery.dart';
+import 'package:materialcraft_app/editor/gallery_dialog.dart';
 import 'package:materialcraft_app/editor/new_theme_wizard.dart';
 import 'package:materialcraft_app/editor/preview_showcases.dart';
 import 'dart:convert';
@@ -55,6 +57,7 @@ void main() {
   _colorTests();
   _projectTests();
   _shareLinkTests();
+  _galleryTests();
   _shadcnFoundationTests();
   _shadcnPresetTests();
   _shadcnVariantTests();
@@ -2811,6 +2814,160 @@ void _shareLinkTests() {
       final payload = Uri.parse(copied!).queryParameters[shareParam]!;
       expect(decodeSharePayload(payload).name, 'My theme');
       expect(find.textContaining('Link copied'), findsOneWidget);
+    });
+  });
+}
+
+void _galleryTests() {
+  group('gallery', () {
+    // The tests open Material 3 themes: the others would download Google
+    // Fonts, which tests can't do.
+    Future<EditorPageState> startEditor(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1600, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(const MaterialCraftApp());
+      return tester.state<EditorPageState>(find.byType(EditorPage));
+    }
+
+    Future<void> useBundledGallery(WidgetTester tester) async {
+      resetGalleryCache();
+      setGalleryForTesting((await tester.runAsync(loadGallery))!);
+    }
+
+    Map<String, Object?> entryJson({String? author, String? description}) => {
+      ...layeredThemeToJson(LayeredTheme(), name: 'Nice'),
+      'gallery': {
+        'author': author ?? 'someone',
+        'description': description ?? 'A nice theme.',
+        'added': '2026-11-05',
+      },
+    };
+
+    test('slugs come from file names in gallery/', () {
+      expect(
+        gallerySlugOf('gallery/sunset-pop.materialcraft.json'),
+        'sunset-pop',
+      );
+      expect(gallerySlugOf('gallery/Sunset.materialcraft.json'), isNull);
+      expect(gallerySlugOf('gallery/a--b.materialcraft.json'), isNull);
+      expect(gallerySlugOf('gallery/readme.md'), isNull);
+      expect(gallerySlugOf('other/x.materialcraft.json'), isNull);
+    });
+
+    test('gallery files need author, description and date', () {
+      final e = galleryEntryFromJson('nice', entryJson());
+      expect(e.name, 'Nice');
+      expect(e.authorUrl, 'https://github.com/someone');
+      for (final bad in [
+        entryJson(author: 'not a login'),
+        entryJson(author: '-dash'),
+        entryJson(description: ''),
+        entryJson(description: 'x' * (maxGalleryDescriptionLength + 1)),
+        {...entryJson(), 'gallery': null},
+        {...entryJson(), 'name': ''},
+        {...entryJson(), 'name': 'x' * (maxGalleryNameLength + 1)},
+        {...entryJson(), 'format': 'other'},
+      ]) {
+        expect(
+          () => galleryEntryFromJson('nice', bad),
+          throwsFormatException,
+          reason: '$bad',
+        );
+      }
+    });
+
+    test('gallery links use ?g=', () {
+      expect(
+        galleryLink('sunset-pop'),
+        'https://materialcraft.danieleorlando.me/?g=sunset-pop',
+      );
+    });
+
+    testWidgets('the bundled gallery loads, newest first', (tester) async {
+      resetGalleryCache();
+      final entries = (await tester.runAsync(loadGallery))!;
+      expect(entries.length, greaterThanOrEqualTo(8));
+      for (var i = 1; i < entries.length; i++) {
+        expect(compareGalleryEntries(entries[i - 1], entries[i]), lessThan(0));
+      }
+    });
+
+    testWidgets('Gallery shows the themes and opens one', (tester) async {
+      final state = await startEditor(tester);
+      await useBundledGallery(tester);
+      await tester.tap(find.text('Gallery'));
+      await tester.pumpAndSettle();
+      expect(find.byType(GalleryCard), findsWidgets);
+      expect(find.text('Forest Calm'), findsOneWidget);
+
+      final card = find.ancestor(
+        of: find.text('Forest Calm'),
+        matching: find.byType(GalleryCard),
+      );
+      expect(
+        find.descendant(of: card, matching: find.text('by @danieleorlando')),
+        findsOneWidget,
+      );
+      await tester.tap(find.descendant(of: card, matching: find.text('Open')));
+      await tester.pumpAndSettle();
+      expect(state.controller.themeName, 'Forest Calm');
+      expect(state.controller.preset.id, 'material3');
+      expect(
+        find.text('Opened the gallery theme "Forest Calm"'),
+        findsOneWidget,
+      );
+
+      // Editing the opened theme doesn't change the gallery's copy.
+      state.controller.theme.globals.radius = 30;
+      final again = (await loadGallery()).firstWhere(
+        (e) => e.slug == 'forest-calm',
+      );
+      expect(again.theme.globals.radius, 12);
+    });
+
+    testWidgets('?g= opens a gallery theme, unknown ones say so', (
+      tester,
+    ) async {
+      final state = await startEditor(tester);
+      await useBundledGallery(tester);
+
+      final opened = state.openGalleryTheme('midnight-indigo');
+      await tester.pumpAndSettle();
+      expect(await opened, isTrue);
+      expect(state.controller.themeName, 'Midnight Indigo');
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+
+      final missing = state.openGalleryTheme('does-not-exist');
+      await tester.pumpAndSettle();
+      expect(await missing, isFalse);
+      expect(state.controller.themeName, 'Midnight Indigo');
+      expect(find.textContaining("isn't in the gallery"), findsOneWidget);
+    });
+
+    testWidgets('asks before replacing a theme with edits', (tester) async {
+      final state = await startEditor(tester);
+      await useBundledGallery(tester);
+      state.controller
+        ..themeName = 'Work in progress'
+        ..theme.globals.radius = 3
+        ..theme.invalidate();
+
+      var opening = state.openGalleryTheme('midnight-indigo');
+      await tester.pumpAndSettle();
+      expect(find.text('Open the gallery theme?'), findsOneWidget);
+      await tester.tap(find.text('Keep mine'));
+      await tester.pumpAndSettle();
+      expect(await opening, isTrue);
+      expect(state.controller.themeName, 'Work in progress');
+
+      opening = state.openGalleryTheme('midnight-indigo');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open gallery theme'));
+      await tester.pumpAndSettle();
+      expect(await opening, isTrue);
+      expect(state.controller.themeName, 'Midnight Indigo');
     });
   });
 }

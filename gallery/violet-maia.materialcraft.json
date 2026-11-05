@@ -1,0 +1,17 @@
+{
+  "format": "materialcraft-theme",
+  "version": 1,
+  "name": "Violet Maia",
+  "style": "shadcn.maia",
+  "colors": {
+    "primary": "FF7008E7",
+    "neutralFamily": "mauve"
+  },
+  "globals": {},
+  "edits": {},
+  "gallery": {
+    "author": "danieleorlando",
+    "description": "Rounded, spacious shadcn/ui Maia in violet on mauve.",
+    "added": "2026-11-05"
+  }
+}

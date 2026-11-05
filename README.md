@@ -41,6 +41,8 @@ shadows a Material widget.
   focus rings and press motion, previewed side by side in light and dark.
 - **Projects**: autosave in the browser, plus save and open
   `.materialcraft.json` files.
+- **Share and gallery**: copy a link that opens your theme in the editor, or
+  start from a theme in the [community gallery](gallery).
 
 ## Export
 

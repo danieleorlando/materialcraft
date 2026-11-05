@@ -14,11 +14,11 @@ Future<String?> pickTextFile() async => null;
 
 void openUrl(String url) {}
 
-/// The `?t=` value of a shared link the page was opened with.
-String? readShareParam() => null;
+/// A parameter of the address the page was opened with (e.g. `?t=`).
+String? readUrlParam(String name) => null;
 
-/// Removes `?t=` from the address bar, so a reload doesn't reopen it.
-void clearShareParam() {}
+/// Removes [names] from the address bar, so a reload doesn't reopen them.
+void clearUrlParams(Set<String> names) {}
 
 /// Address of the running editor, used to build shared links.
 String? editorBaseUrl() => null;

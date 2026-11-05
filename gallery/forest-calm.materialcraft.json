@@ -1,0 +1,19 @@
+{
+  "format": "materialcraft-theme",
+  "version": 1,
+  "name": "Forest Calm",
+  "style": "material3",
+  "colors": {
+    "primary": "FF2E7D32"
+  },
+  "globals": {
+    "radius": 12,
+    "shadowStyle": "none"
+  },
+  "edits": {},
+  "gallery": {
+    "author": "danieleorlando",
+    "description": "Quiet greens, flat surfaces and soft 12px corners.",
+    "added": "2026-11-05"
+  }
+}

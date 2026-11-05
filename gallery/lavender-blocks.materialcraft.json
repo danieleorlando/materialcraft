@@ -1,0 +1,16 @@
+{
+  "format": "materialcraft-theme",
+  "version": 1,
+  "name": "Lavender Blocks",
+  "style": "neobrutalism.lavender",
+  "colors": {},
+  "globals": {
+    "borderWidth": 3
+  },
+  "edits": {},
+  "gallery": {
+    "author": "danieleorlando",
+    "description": "Neobrutalism lavender with chunky 3px borders.",
+    "added": "2026-11-05"
+  }
+}
