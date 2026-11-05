@@ -6,8 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for sharing! The fastest way is the **Submit your theme** button in the
-        MaterialCraft gallery, which fills this form for you. After you submit, a bot
+        Thanks for sharing! The fastest way is the **Submit** button in the
+        MaterialCraft editor, which fills this form for you. After you submit, a bot
         checks the theme and opens a pull request; the theme appears in the gallery
         when it's merged, with your GitHub name on it.
   - type: input

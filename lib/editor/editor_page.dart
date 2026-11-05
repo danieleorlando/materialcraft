@@ -84,7 +84,7 @@ class EditorPageState extends State<EditorPage> {
   }
 
   Future<void> _showGallery() async {
-    final entry = await showGalleryDialog(context, onSubmit: _submitToGallery);
+    final entry = await showGalleryDialog(context);
     if (entry == null || !mounted) return;
     await _openTheme(copyLayeredTheme(entry.theme), entry.name, 'gallery');
   }
@@ -292,6 +292,16 @@ class EditorPageState extends State<EditorPage> {
             onPressed: _share,
             icon: const Icon(Icons.link, size: 18),
             label: const Text('Share'),
+          ),
+          Tooltip(
+            message:
+                'Propose this theme for the gallery: opens a prefilled issue '
+                'on GitHub (you need a GitHub account).',
+            child: TextButton.icon(
+              onPressed: _submitToGallery,
+              icon: const Icon(Icons.upload_outlined, size: 18),
+              label: const Text('Submit'),
+            ),
           ),
           const SizedBox(width: 8),
           Padding(

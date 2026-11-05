@@ -54,19 +54,14 @@ String galleryLink(String slug, {String? baseUrl}) => Uri.parse(
 ).replace(queryParameters: {galleryParam: slug}).toString();
 
 /// Shows the gallery; returns the theme the user chose to open.
-/// [onSubmit] sends the current theme to the gallery.
-Future<GalleryEntry?> showGalleryDialog(
-  BuildContext context, {
-  VoidCallback? onSubmit,
-}) => showDialog<GalleryEntry>(
-  context: context,
-  builder: (context) => _GalleryDialog(onSubmit: onSubmit),
-);
+Future<GalleryEntry?> showGalleryDialog(BuildContext context) =>
+    showDialog<GalleryEntry>(
+      context: context,
+      builder: (context) => const _GalleryDialog(),
+    );
 
 class _GalleryDialog extends StatelessWidget {
-  const _GalleryDialog({this.onSubmit});
-
-  final VoidCallback? onSubmit;
+  const _GalleryDialog();
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +92,8 @@ class _GalleryDialog extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           'Themes made with MaterialCraft. Open one to start '
-                          'from it: you can change everything and export it.',
+                          'from it: you can change everything and export it. '
+                          'To add yours, use Submit in the editor.',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: cs.onSurfaceVariant,
                           ),
@@ -105,20 +101,6 @@ class _GalleryDialog extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (onSubmit != null) ...[
-                    Tooltip(
-                      message:
-                          'Opens a prefilled issue on GitHub (you need a '
-                          'GitHub account). A bot checks the theme and opens '
-                          'a pull request.',
-                      child: FilledButton.tonalIcon(
-                        onPressed: onSubmit,
-                        icon: const Icon(Icons.upload_outlined, size: 18),
-                        label: const Text('Submit your theme'),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
                   IconButton(
                     tooltip: 'Close',
                     onPressed: () => Navigator.pop(context),
