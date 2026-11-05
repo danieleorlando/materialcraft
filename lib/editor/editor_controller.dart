@@ -7,11 +7,21 @@ import 'package:google_fonts/google_fonts.dart';
 import '../model/color_choice.dart';
 import '../model/global_tokens.dart';
 import '../model/presets.dart';
+import '../model/share_link.dart';
 import '../model/surface_config.dart';
 import '../model/theme_config.dart';
 import '../model/theme_json.dart';
 import '../model/theme_layers.dart';
 import 'storage/storage.dart';
+
+/// Project file name for a theme: "My theme" → my-theme.materialcraft.json
+String fileNameFor(String themeName) {
+  final slug = themeName
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+      .replaceAll(RegExp(r'^-|-$'), '');
+  return '${slug.isEmpty ? 'theme' : slug}.materialcraft.json';
+}
 
 /// Section selected in the sidebar.
 sealed class EditorSection {
@@ -141,13 +151,7 @@ class EditorController extends ChangeNotifier {
   ).convert(layeredThemeToJson(theme, name: themeName));
 
   /// File name for the download: "My theme" → my-theme.materialcraft.json
-  String get fileName {
-    final slug = themeName
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-        .replaceAll(RegExp(r'^-|-$'), '');
-    return '${slug.isEmpty ? 'theme' : slug}.materialcraft.json';
-  }
+  String get fileName => fileNameFor(themeName);
 
   /// Replaces the theme being edited (wizard, opening a file).
   Future<void> adopt(LayeredTheme next, {String? name}) async {
@@ -169,6 +173,23 @@ class EditorController extends ChangeNotifier {
     }
     final loaded = layeredThemeFromJson(json);
     await adopt(loaded.theme, name: loaded.name);
+  }
+
+  /// Link that opens the current theme in the editor.
+  String shareLink() =>
+      shareUrl(theme, name: themeName, baseUrl: editorBaseUrl());
+
+  /// The theme in the last autosave, or null if there's none or it can't
+  /// be read.
+  ({LayeredTheme theme, String? name, String json})? readAutosavedTheme() {
+    final text = readAutosave();
+    if (text == null) return null;
+    try {
+      final t = layeredThemeFromJson(jsonDecode(text));
+      return (theme: t.theme, name: t.name, json: text);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Restores the last autosaved theme. True if there was one.

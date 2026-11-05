@@ -201,7 +201,7 @@ packages:
       path: "packages/materialcraft"
       relative: true
     source: path
-    version: "0.1.0"
+    version: "0.1.1"
   meta:
     dependency: transitive
     description:

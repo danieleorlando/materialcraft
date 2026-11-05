@@ -20,6 +20,7 @@ import 'package:materialcraft_app/model/theme_builder.dart';
 import 'package:materialcraft_app/model/theme_config.dart';
 import 'package:materialcraft_app/model/theme_layers.dart';
 import 'package:materialcraft_app/model/theme_json.dart';
+import 'package:materialcraft_app/model/share_link.dart';
 import 'package:materialcraft_app/editor/new_theme_wizard.dart';
 import 'package:materialcraft_app/editor/preview_showcases.dart';
 import 'dart:convert';
@@ -53,6 +54,7 @@ void main() {
   _layerTests();
   _colorTests();
   _projectTests();
+  _shareLinkTests();
   _shadcnFoundationTests();
   _shadcnPresetTests();
   _shadcnVariantTests();
@@ -2628,6 +2630,187 @@ void _shadcnVariantTests() {
         jsonDecode(jsonEncode(layeredThemeToJson(t))),
       ).theme;
       expect(back.base.shadcnStyle, 'luma');
+    });
+  });
+}
+
+void _shareLinkTests() {
+  group('shared links', () {
+    LayeredTheme heavyTheme() {
+      final t = LayeredTheme(base: ThemePreset.neobrutalism('green'))
+        ..colors.primary = const Color(0xFF0A84FF)
+        ..colors.primaryName = 'Blue'
+        ..globals.radius = 6
+        ..globals.shadowStyle = ShadowStyle.hard
+        ..globals.press = PressEffect.scale;
+      final e = t.edits..fontFamily = 'Inter';
+      for (final kind in ButtonKind.values) {
+        final b = e.buttons[kind]!
+          ..radius = 3
+          ..fontWeight = FontWeight.w700;
+        for (final state in ButtonStateKey.values) {
+          b.states[state]!
+            ..fill = const RoleColor(SchemeRole.secondary, alpha: 0.5)
+            ..shadow = ShadowToken.hardSm;
+        }
+      }
+      for (final role in TextRole.values) {
+        e.typography.styles[role]!.size = 20;
+      }
+      for (final kind in SurfaceKind.values) {
+        e.surfaces[kind]!.background = const CustomColor(Color(0xFFFAFAFA));
+      }
+      t.invalidate();
+      return t;
+    }
+
+    test('every preset survives a link', () {
+      for (final p in ThemePreset.all) {
+        final t = LayeredTheme(base: p);
+        final back = decodeSharePayload(encodeSharePayload(t, name: 'Mine'));
+        expect(back.name, 'Mine', reason: p.name);
+        expect(
+          exportDart(back.theme.resolved),
+          exportDart(t.resolved),
+          reason: p.name,
+        );
+      }
+    });
+
+    test('hand edits survive a link', () {
+      final t = heavyTheme();
+      final back = decodeSharePayload(encodeSharePayload(t)).theme;
+      expect(sameTheme(back, t), isTrue);
+      expect(exportDart(back.resolved), exportDart(t.resolved));
+    });
+
+    test('links stay short enough for chats and social posts', () {
+      final plain = shareUrl(LayeredTheme(), name: 'My theme');
+      expect(plain.length, lessThan(300));
+      final heavy = shareUrl(heavyTheme(), name: 'My theme');
+      expect(heavy.length, lessThan(8000), reason: '${heavy.length} chars');
+    });
+
+    test('the link points to the editor with ?t=', () {
+      final url = Uri.parse(
+        shareUrl(LayeredTheme(), baseUrl: 'http://localhost:5000/'),
+      );
+      expect(url.origin, 'http://localhost:5000');
+      expect(url.hasFragment, isFalse);
+      final payload = url.queryParameters[shareParam]!;
+      expect(payload, startsWith('$shareLinkVersion.'));
+      expect(payload, isNot(contains('=')));
+      expect(
+        Uri.parse(shareUrl(LayeredTheme())).origin,
+        'https://materialcraft.danieleorlando.me',
+      );
+    });
+
+    test('damaged links give a clear error', () {
+      final good = encodeSharePayload(LayeredTheme(), name: 'x');
+      String b64(String s) => base64Url.encode(utf8.encode(s));
+      for (final bad in [
+        '',
+        'garbage',
+        '1.',
+        '1.%%%',
+        good.substring(0, good.length ~/ 2),
+        '1.${b64('{"hello": 1}')}',
+        '1.${b64('[1, 2]')}',
+      ]) {
+        expect(
+          () => decodeSharePayload(bad),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              contains('broken'),
+            ),
+          ),
+          reason: bad,
+        );
+      }
+    });
+
+    test('links from a newer MaterialCraft say so', () {
+      final newerJson = jsonEncode({
+        ...layeredThemeToJson(LayeredTheme()),
+        'version': themeFileVersion + 1,
+      });
+      for (final bad in [
+        '${shareLinkVersion + 1}.abc',
+        '1.${base64Url.encode(utf8.encode(newerJson))}',
+      ]) {
+        expect(
+          () => decodeSharePayload(bad),
+          throwsA(
+            isA<FormatException>().having(
+              (e) => e.message,
+              'message',
+              contains('newer'),
+            ),
+          ),
+          reason: bad,
+        );
+      }
+    });
+
+    testWidgets('the editor opens a shared link', (tester) async {
+      tester.view.physicalSize = const Size(1600, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(const MaterialCraftApp());
+      final state = tester.state<EditorPageState>(find.byType(EditorPage));
+
+      // Material 3: no Google Font to download, which tests can't do.
+      final shared = LayeredTheme()
+        ..colors.primary = const Color(0xFF0A84FF)
+        ..globals.radius = 2;
+      final payload = encodeSharePayload(shared, name: 'Board 2');
+      final opened = state.openSharedTheme(payload);
+      await tester.pumpAndSettle();
+      expect(await opened, isTrue);
+      expect(state.controller.themeName, 'Board 2');
+      expect(state.controller.colors.primary, const Color(0xFF0A84FF));
+      expect(state.controller.theme.globals.radius, 2);
+      expect(find.text('Opened the shared theme "Board 2"'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+
+      final broken = state.openSharedTheme('garbage');
+      await tester.pumpAndSettle();
+      expect(await broken, isFalse);
+      expect(state.controller.themeName, 'Board 2');
+      expect(find.textContaining('broken'), findsOneWidget);
+    });
+
+    testWidgets('Share copies the link', (tester) async {
+      tester.view.physicalSize = const Size(1600, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      String? copied;
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData') {
+            copied = (call.arguments as Map)['text'] as String;
+          }
+          return null;
+        },
+      );
+      addTearDown(
+        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await tester.pumpWidget(const MaterialCraftApp());
+      await tester.tap(find.text('Share'));
+      await tester.pumpAndSettle();
+      expect(copied, isNotNull);
+      final payload = Uri.parse(copied!).queryParameters[shareParam]!;
+      expect(decodeSharePayload(payload).name, 'My theme');
+      expect(find.textContaining('Link copied'), findsOneWidget);
     });
   });
 }

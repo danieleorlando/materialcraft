@@ -3,6 +3,8 @@ import 'dart:js_interop';
 
 import 'package:web/web.dart' as web;
 
+import '../../model/share_link.dart';
+
 const _autosaveKey = 'materialcraft.autosave.v1';
 
 /// Last autosaved theme (null if there's none or the browser
@@ -72,3 +74,31 @@ Future<String?> pickTextFile() {
 void openUrl(String url) {
   web.window.open(url, '_blank', 'noopener');
 }
+
+/// The `?t=` value of a shared link the page was opened with.
+String? readShareParam() {
+  final value = Uri.base.queryParameters[shareParam];
+  return value == null || value.isEmpty ? null : value;
+}
+
+/// Removes `?t=` from the address bar, so a reload doesn't reopen it.
+void clearShareParam() {
+  final uri = Uri.base;
+  if (!uri.queryParameters.containsKey(shareParam)) return;
+  final rest = Map.of(uri.queryParameters)..remove(shareParam);
+  final query = rest.isEmpty ? '' : '?${Uri(queryParameters: rest).query}';
+  final fragment = uri.hasFragment ? '#${uri.fragment}' : '';
+  try {
+    // Keeps Flutter's own history state, only the address changes.
+    web.window.history.replaceState(
+      web.window.history.state,
+      '',
+      '${uri.path}$query$fragment',
+    );
+  } catch (_) {
+    // Not critical: a reload just reopens the shared theme.
+  }
+}
+
+/// Address of the running editor, used to build shared links.
+String? editorBaseUrl() => '${Uri.base.origin}${Uri.base.path}';
