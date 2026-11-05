@@ -91,11 +91,12 @@ GalleryEntry galleryEntryFromJson(String slug, Object? json) {
   if (author is! String || !_loginPattern.hasMatch(author)) {
     throw FormatException('$slug: "author" must be a GitHub login.');
   }
-  final added = meta['added'] is String
-      ? DateTime.tryParse(meta['added'] as String)
-      : null;
+  final added = _parseAdded(meta['added']);
   if (added == null) {
-    throw FormatException('$slug: "added" must be a date (YYYY-MM-DD).');
+    throw FormatException(
+      '$slug: "added" must be a UTC date or time '
+      '(YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ).',
+    );
   }
   return GalleryEntry(
     slug: slug,
@@ -105,6 +106,17 @@ GalleryEntry galleryEntryFromJson(String slug, Object? json) {
     added: added,
     theme: loaded.theme,
   );
+}
+
+/// When a theme joined the gallery. A date alone counts as midnight UTC, so
+/// the order doesn't depend on the viewer's time zone.
+DateTime? _parseAdded(Object? value) {
+  if (value is! String) return null;
+  if (RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value)) {
+    return DateTime.tryParse('${value}T00:00:00Z');
+  }
+  final t = DateTime.tryParse(value);
+  return t != null && t.isUtc ? t : null;
 }
 
 /// Newest first, then by name.

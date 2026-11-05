@@ -22,7 +22,7 @@ import 'package:materialcraft_app/model/theme_layers.dart';
 import 'package:materialcraft_app/model/theme_json.dart';
 import 'package:materialcraft_app/model/share_link.dart';
 import 'package:materialcraft_app/model/gallery.dart';
-import 'package:materialcraft_app/editor/gallery_dialog.dart';
+import 'package:materialcraft_app/editor/gallery_page.dart';
 import 'package:materialcraft_app/editor/new_theme_wizard.dart';
 import 'package:materialcraft_app/editor/preview_showcases.dart';
 import 'dart:convert';
@@ -2827,7 +2827,9 @@ void _galleryTests() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       await tester.pumpWidget(const MaterialCraftApp());
-      return tester.state<EditorPageState>(find.byType(EditorPage));
+      return tester.state<EditorPageState>(
+        find.byType(EditorPage, skipOffstage: false),
+      );
     }
 
     Future<void> useBundledGallery(WidgetTester tester) async {
@@ -2874,6 +2876,28 @@ void _galleryTests() {
           throwsFormatException,
           reason: '$bad',
         );
+      }
+    });
+
+    test('newest first: a time beats a plain date of the same day', () {
+      GalleryEntry entry(String name, String added) => galleryEntryFromJson(
+        name.toLowerCase(),
+        {
+          ...entryJson(),
+          'name': name,
+          'gallery': {'author': 'someone', 'description': 'x', 'added': added},
+        },
+      );
+      final list = [
+        entry('Aaa', '2026-11-05'),
+        entry('Ccc', '2026-11-05T10:36:50Z'),
+        entry('Bbb', '2026-11-05'),
+        entry('Ddd', '2026-11-04T23:00:00Z'),
+      ]..sort(compareGalleryEntries);
+      expect(list.map((e) => e.name), ['Ccc', 'Aaa', 'Bbb', 'Ddd']);
+      expect(entry('X', '2026-11-05').added, DateTime.utc(2026, 11, 5));
+      for (final bad in ['yesterday', '2026-11-05T10:00:00', '']) {
+        expect(() => entry('Y', bad), throwsFormatException, reason: bad);
       }
     });
 
@@ -2954,6 +2978,52 @@ void _galleryTests() {
         (e) => e.slug == 'forest-calm',
       );
       expect(again.theme.globals.radius, 12);
+    });
+
+    testWidgets('the gallery page filters by style and goes back', (
+      tester,
+    ) async {
+      await startEditor(tester);
+      await useBundledGallery(tester);
+      await tester.tap(find.text('Gallery'));
+      await tester.pumpAndSettle();
+      expect(find.text('Export code'), findsNothing);
+      expect(find.text('Forest Calm'), findsOneWidget);
+
+      await tester.tap(find.textContaining('Neobrutalism ('));
+      await tester.pumpAndSettle();
+      expect(find.text('Forest Calm'), findsNothing);
+      expect(find.text('Sunset Pop'), findsOneWidget);
+      await tester.tap(find.textContaining('All ('));
+      await tester.pumpAndSettle();
+      expect(find.text('Forest Calm'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Back to the editor'));
+      await tester.pumpAndSettle();
+      expect(find.text('Export code'), findsOneWidget);
+    });
+
+    testWidgets('/gallery opens the gallery over the editor', (tester) async {
+      tester.binding.platformDispatcher.defaultRouteNameTestValue =
+          galleryRoute;
+      addTearDown(
+        tester.binding.platformDispatcher.clearDefaultRouteNameTestValue,
+      );
+      await useBundledGallery(tester);
+      final state = await startEditor(tester);
+      await tester.pumpAndSettle();
+      expect(find.byType(GalleryPage), findsOneWidget);
+      expect(find.text('Export code'), findsNothing);
+
+      final card = find.ancestor(
+        of: find.text('Midnight Indigo'),
+        matching: find.byType(GalleryCard),
+      );
+      await tester.ensureVisible(card);
+      await tester.tap(find.descendant(of: card, matching: find.text('Open')));
+      await tester.pumpAndSettle();
+      expect(find.byType(GalleryPage), findsNothing);
+      expect(state.controller.themeName, 'Midnight Indigo');
     });
 
     testWidgets('?g= opens a gallery theme, unknown ones say so', (

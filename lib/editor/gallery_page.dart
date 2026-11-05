@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../model/gallery.dart';
+import '../model/presets.dart';
 import '../model/share_link.dart';
 import '../model/theme_builder.dart';
 import '../model/theme_config.dart';
 import '../model/theme_json.dart';
 import '../model/theme_layers.dart';
 import 'preview_pane.dart';
+import 'style_properties.dart';
 import 'storage/storage.dart';
 
 Future<List<GalleryEntry>>? _gallery;
@@ -53,102 +55,172 @@ String galleryLink(String slug, {String? baseUrl}) => Uri.parse(
   baseUrl ?? publicEditorUrl,
 ).replace(queryParameters: {galleryParam: slug}).toString();
 
-/// Shows the gallery; returns the theme the user chose to open.
-Future<GalleryEntry?> showGalleryDialog(BuildContext context) =>
-    showDialog<GalleryEntry>(
-      context: context,
-      builder: (context) => const _GalleryDialog(),
-    );
+/// Address of the gallery page.
+const galleryRoute = '/gallery';
 
-class _GalleryDialog extends StatelessWidget {
-  const _GalleryDialog();
+/// The gallery as a page of its own (`/gallery`): a grid of themes with
+/// filters by style. [onOpen] puts the chosen theme in the editor, which the
+/// page returns to first.
+class GalleryPage extends StatefulWidget {
+  const GalleryPage({super.key, required this.onOpen});
+
+  final ValueChanged<GalleryEntry> onOpen;
+
+  @override
+  State<GalleryPage> createState() => _GalleryPageState();
+}
+
+class _GalleryPageState extends State<GalleryPage> {
+  /// Style filter (null = all).
+  PresetStyle? _style;
+
+  void _open(GalleryEntry entry) {
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    widget.onOpen(entry);
+  }
+
+  void _back() {
+    final nav = Navigator.of(context);
+    if (nav.canPop()) {
+      nav.pop();
+    } else {
+      nav.pushReplacementNamed('/');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final size = MediaQuery.sizeOf(context);
-    return Dialog(
-      insetPadding: const EdgeInsets.all(24),
-      clipBehavior: Clip.antiAlias,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 1180,
-          maxHeight: size.height * 0.88,
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        centerTitle: false,
+        leading: IconButton(
+          tooltip: 'Back to the editor',
+          onPressed: _back,
+          icon: const Icon(Icons.arrow_back),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 12, 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
+        title: Text.rich(
+          TextSpan(
+            text: 'MaterialCraft',
+            children: [
+              TextSpan(
+                text: '  ·  Gallery',
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+        backgroundColor: cs.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: Border(bottom: BorderSide(color: cs.outlineVariant)),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: FilledButton.tonalIcon(
+              onPressed: _back,
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('Editor'),
+            ),
+          ),
+        ],
+      ),
+      body: FutureBuilder<List<GalleryEntry>>(
+        future: loadGallery(),
+        builder: (context, snap) {
+          if (snap.hasError) {
+            return const _Message("The gallery couldn't be loaded.");
+          }
+          final all = snap.data;
+          if (all == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final styles = {for (final e in all) e.theme.base.style};
+          final entries = _style == null
+              ? all
+              : all.where((e) => e.theme.base.style == _style).toList();
+          return CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: _Centered(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 28, 24, 8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Gallery', style: theme.textTheme.headlineSmall),
-                        const SizedBox(height: 4),
+                        Text('Gallery', style: theme.textTheme.headlineMedium),
+                        const SizedBox(height: 6),
                         Text(
                           'Themes made with MaterialCraft. Open one to start '
                           'from it: you can change everything and export it. '
                           'To add yours, use Submit in the editor.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
+                          style: theme.textTheme.bodyLarge?.copyWith(
                             color: cs.onSurfaceVariant,
                           ),
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            ChoiceChip(
+                              label: Text('All (${all.length})'),
+                              selected: _style == null,
+                              onSelected: (_) => setState(() => _style = null),
+                            ),
+                            for (final style in PresetStyle.values)
+                              if (styles.contains(style))
+                                ChoiceChip(
+                                  label: Text(
+                                    '${styleInfo[style]!.$1} '
+                                    '(${all.where((e) => e.theme.base.style == style).length})',
+                                  ),
+                                  selected: _style == style,
+                                  onSelected: (_) =>
+                                      setState(() => _style = style),
+                                ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Close',
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
+                ),
               ),
-            ),
-            Divider(height: 1, color: cs.outlineVariant),
-            Flexible(
-              child: FutureBuilder<List<GalleryEntry>>(
-                future: loadGallery(),
-                builder: (context, snap) {
-                  if (snap.hasError) {
-                    return const _Message("The gallery couldn't be loaded.");
-                  }
-                  final entries = snap.data;
-                  if (entries == null) {
-                    return const Padding(
-                      padding: EdgeInsets.all(48),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
-                  if (entries.isEmpty) {
-                    return const _Message('No themes in the gallery yet.');
-                  }
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.all(20),
+              if (all.isEmpty)
+                const SliverToBoxAdapter(
+                  child: _Message('No themes in the gallery yet.'),
+                ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                sliver: _SliverCentered(
+                  maxCrossAxisExtent: _maxContentWidth - 48,
+                  sliver: SliverGrid.builder(
                     gridDelegate:
                         const SliverGridDelegateWithMaxCrossAxisExtent(
-                          maxCrossAxisExtent: 380,
+                          maxCrossAxisExtent: 420,
                           mainAxisExtent: 268,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 20,
                         ),
                     itemCount: entries.length,
-                    itemBuilder: (context, i) => GalleryCard(entry: entries[i]),
-                  );
-                },
+                    itemBuilder: (context, i) => GalleryCard(
+                      key: ValueKey(entries[i].slug),
+                      entry: entries[i],
+                      onOpen: () => _open(entries[i]),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          );
+        },
       ),
     );
   }
 }
+
+const _maxContentWidth = 1400.0;
 
 class _Message extends StatelessWidget {
   const _Message(this.text);
@@ -162,11 +234,49 @@ class _Message extends StatelessWidget {
   );
 }
 
+class _Centered extends StatelessWidget {
+  const _Centered({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.topCenter,
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+      child: SizedBox(width: double.infinity, child: child),
+    ),
+  );
+}
+
+/// Centers a sliver and limits its width, like [_Centered] for boxes.
+class _SliverCentered extends StatelessWidget {
+  const _SliverCentered({
+    required this.maxCrossAxisExtent,
+    required this.sliver,
+  });
+
+  final double maxCrossAxisExtent;
+  final Widget sliver;
+
+  @override
+  Widget build(BuildContext context) => SliverLayoutBuilder(
+    builder: (context, constraints) {
+      final extra = constraints.crossAxisExtent - maxCrossAxisExtent;
+      return SliverPadding(
+        padding: EdgeInsets.symmetric(horizontal: extra > 0 ? extra / 2 : 0),
+        sliver: sliver,
+      );
+    },
+  );
+}
+
 /// One gallery theme: live light/dark preview, name, author and actions.
 class GalleryCard extends StatefulWidget {
-  const GalleryCard({super.key, required this.entry});
+  const GalleryCard({super.key, required this.entry, required this.onOpen});
 
   final GalleryEntry entry;
+  final VoidCallback onOpen;
 
   @override
   State<GalleryCard> createState() => _GalleryCardState();
@@ -280,7 +390,7 @@ class _GalleryCardState extends State<GalleryCard> {
                       ),
                       const SizedBox(width: 4),
                       FilledButton.tonal(
-                        onPressed: () => Navigator.pop(context, e),
+                        onPressed: widget.onOpen,
                         child: const Text('Open'),
                       ),
                     ],

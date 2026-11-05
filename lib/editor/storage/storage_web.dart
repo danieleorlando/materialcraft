@@ -99,5 +99,6 @@ void clearUrlParams(Set<String> names) {
   }
 }
 
-/// Address of the running editor, used to build shared links.
-String? editorBaseUrl() => '${Uri.base.origin}${Uri.base.path}';
+/// Address of the running editor, used to build shared links. The app lives
+/// at the site root, also when the gallery page (/gallery) is open.
+String? editorBaseUrl() => '${Uri.base.origin}/';
