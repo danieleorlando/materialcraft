@@ -1,0 +1,17 @@
+{
+  "format": "materialcraft-theme",
+  "version": 1,
+  "name": "neobrutalism-rounded-yellow",
+  "style": "neobrutalism.yellow",
+  "colors": {},
+  "globals": {
+    "radius": 24,
+    "borderWidth": 2
+  },
+  "edits": {},
+  "gallery": {
+    "author": "danieleorlando",
+    "description": "Neobrutalism rounded yellow theme",
+    "added": "2026-11-05"
+  }
+}
