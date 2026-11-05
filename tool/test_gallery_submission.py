@@ -39,13 +39,13 @@ class GallerySubmissionTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.gallery = Path(self.tmp.name)
-        self.today = datetime.date(2026, 11, 6)
+        self.now = datetime.datetime(2026, 11, 6, 9, 30, 5, tzinfo=datetime.timezone.utc)
 
     def tearDown(self):
         self.tmp.cleanup()
 
     def build(self, text, author="someone"):
-        return build_submission(text, author, self.gallery, self.today)
+        return build_submission(text, author, self.gallery, self.now)
 
     def test_reads_issue_forms(self):
         form = read_form("### A\n\nx\ny\n\n### B\n\n_No response_\n")
@@ -59,7 +59,7 @@ class GallerySubmissionTest(unittest.TestCase):
         self.assertEqual(
             entry["gallery"],
             {"author": "someone", "description": "Warm and bold.",
-             "added": "2026-11-06"},
+             "added": "2026-11-06T09:30:05Z"},
         )
 
     def test_unknown_keys_are_dropped(self):

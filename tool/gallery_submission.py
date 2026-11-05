@@ -114,7 +114,7 @@ def free_slug(base, gallery):
     return slug
 
 
-def build_submission(body, author, gallery=GALLERY, today=None):
+def build_submission(body, author, gallery=GALLERY, now=None):
     """Returns (slug, gallery file JSON) or raises SubmissionError."""
     if not LOGIN.match(author or ""):
         raise SubmissionError("The issue author isn't a valid GitHub login.")
@@ -155,7 +155,9 @@ def build_submission(body, author, gallery=GALLERY, today=None):
     entry["gallery"] = {
         "author": author,
         "description": description,
-        "added": (today or datetime.date.today()).isoformat(),
+        # UTC time, so themes added on the same day keep their order.
+        "added": (now or datetime.datetime.now(datetime.timezone.utc))
+        .strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
     return free_slug(slug_base, gallery), entry
 

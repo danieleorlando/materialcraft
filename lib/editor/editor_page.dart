@@ -10,7 +10,7 @@ import '../model/theme_layers.dart';
 import 'about_dialog.dart';
 import 'editor_controller.dart';
 import 'export_dialog.dart';
-import 'gallery_dialog.dart';
+import 'gallery_page.dart';
 import 'new_theme_wizard.dart';
 import 'storage/storage.dart';
 import 'preview_pane.dart';
@@ -48,7 +48,8 @@ class EditorPageState extends State<EditorPage> {
     final restored = await _controller.restoreAutosave();
     if (shared != null && await openSharedTheme(shared)) return;
     if (gallery != null && await openGalleryTheme(gallery)) return;
-    if (!restored && kIsWeb && mounted) {
+    // Not over the gallery page, when the site was opened at /gallery.
+    if (!restored && kIsWeb && mounted && ModalRoute.of(context)!.isCurrent) {
       await showNewThemeWizard(context, _controller);
     }
   }
@@ -83,11 +84,9 @@ class EditorPageState extends State<EditorPage> {
     return _openTheme(copyLayeredTheme(entry.theme), entry.name, 'gallery');
   }
 
-  Future<void> _showGallery() async {
-    final entry = await showGalleryDialog(context);
-    if (entry == null || !mounted) return;
-    await _openTheme(copyLayeredTheme(entry.theme), entry.name, 'gallery');
-  }
+  /// Opens a theme chosen on the gallery page.
+  Future<void> openFromGallery(GalleryEntry entry) =>
+      _openTheme(copyLayeredTheme(entry.theme), entry.name, 'gallery');
 
   /// Puts [theme] in the editor, asking first if it would replace a different
   /// theme the user was working on. [kind] says where it comes from
@@ -269,7 +268,7 @@ class EditorPageState extends State<EditorPage> {
             child: VerticalDivider(width: 24, color: cs.outlineVariant),
           ),
           TextButton.icon(
-            onPressed: _showGallery,
+            onPressed: () => Navigator.pushNamed(context, galleryRoute),
             icon: const Icon(Icons.grid_view_outlined, size: 18),
             label: const Text('Gallery'),
           ),
