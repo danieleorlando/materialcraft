@@ -13,3 +13,12 @@ void downloadText(
 Future<String?> pickTextFile() async => null;
 
 void openUrl(String url) {}
+
+/// The `?t=` value of a shared link the page was opened with.
+String? readShareParam() => null;
+
+/// Removes `?t=` from the address bar, so a reload doesn't reopen it.
+void clearShareParam() {}
+
+/// Address of the running editor, used to build shared links.
+String? editorBaseUrl() => null;

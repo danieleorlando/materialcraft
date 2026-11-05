@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../model/share_link.dart';
 import '../model/surface_config.dart';
 import '../model/theme_config.dart';
+import '../model/theme_layers.dart';
 import 'about_dialog.dart';
 import 'editor_controller.dart';
 import 'export_dialog.dart';
@@ -31,13 +34,93 @@ class EditorPageState extends State<EditorPage> {
     _start();
   }
 
-  /// Restores the last theme; on first launch in the browser it opens the
-  /// wizard.
+  /// Opens a shared link if the page has one; otherwise restores the last
+  /// theme, and on first launch in the browser opens the wizard.
   Future<void> _start() async {
+    final shared = readShareParam();
+    if (shared != null) {
+      clearShareParam();
+      if (await openSharedTheme(shared)) return;
+    }
     final restored = await _controller.restoreAutosave();
     if (!restored && kIsWeb && mounted) {
       await showNewThemeWizard(context, _controller);
     }
+  }
+
+  /// Opens the theme of a shared link (`?t=` value). Asks first if it would
+  /// replace a different theme the user was working on. True if the editor
+  /// now shows a theme (the shared one or the user's own).
+  @visibleForTesting
+  Future<bool> openSharedTheme(String payload) async {
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return false;
+    final ({LayeredTheme theme, String? name}) shared;
+    try {
+      shared = decodeSharePayload(payload);
+    } on FormatException catch (e) {
+      _toast(e.message);
+      return false;
+    }
+    final sharedName = shared.name ?? 'Shared theme';
+
+    final mine = _controller.readAutosavedTheme();
+    if (mine != null &&
+        mine.theme.hasUserChoices &&
+        !sameTheme(mine.theme, shared.theme)) {
+      final choice = await _askReplace(sharedName, mine.name ?? 'My theme');
+      if (!mounted) return false;
+      switch (choice) {
+        case _ReplaceChoice.keep:
+          await _controller.adopt(mine.theme, name: mine.name);
+          return true;
+        case _ReplaceChoice.saveFirst:
+          downloadText(fileNameFor(mine.name ?? 'My theme'), mine.json);
+        case _ReplaceChoice.open:
+          break;
+      }
+    }
+    await _controller.adopt(shared.theme, name: sharedName);
+    if (mounted) _toast('Opened the shared theme "$sharedName"');
+    return true;
+  }
+
+  Future<_ReplaceChoice> _askReplace(String shared, String mine) async {
+    final choice = await showDialog<_ReplaceChoice>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Open the shared theme?'),
+        content: Text(
+          'The link opens "$shared". It replaces the theme you were working '
+          'on, "$mine".',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, _ReplaceChoice.keep),
+            child: const Text('Keep mine'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, _ReplaceChoice.saveFirst),
+            child: const Text('Save mine, then open'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, _ReplaceChoice.open),
+            child: const Text('Open shared theme'),
+          ),
+        ],
+      ),
+    );
+    return choice ?? _ReplaceChoice.keep;
+  }
+
+  Future<void> _share() async {
+    await Clipboard.setData(ClipboardData(text: _controller.shareLink()));
+    if (!mounted) return;
+    _toast(
+      'Link copied. Anyone who opens it gets "${_controller.themeName}" in '
+      'the editor.',
+    );
   }
 
   @override
@@ -147,6 +230,11 @@ class EditorPageState extends State<EditorPage> {
             onPressed: _save,
             icon: const Icon(Icons.save_outlined, size: 18),
             label: const Text('Save'),
+          ),
+          TextButton.icon(
+            onPressed: _share,
+            icon: const Icon(Icons.link, size: 18),
+            label: const Text('Share'),
           ),
           const SizedBox(width: 8),
           Padding(
@@ -333,3 +421,5 @@ class _Sidebar extends StatelessWidget {
     );
   }
 }
+
+enum _ReplaceChoice { keep, saveFirst, open }
