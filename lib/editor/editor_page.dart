@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../model/gallery.dart';
 import '../model/share_link.dart';
 import '../model/surface_config.dart';
 import '../model/theme_config.dart';
@@ -9,6 +10,7 @@ import '../model/theme_layers.dart';
 import 'about_dialog.dart';
 import 'editor_controller.dart';
 import 'export_dialog.dart';
+import 'gallery_dialog.dart';
 import 'new_theme_wizard.dart';
 import 'storage/storage.dart';
 import 'preview_pane.dart';
@@ -34,23 +36,25 @@ class EditorPageState extends State<EditorPage> {
     _start();
   }
 
-  /// Opens a shared link if the page has one; otherwise restores the last
-  /// theme, and on first launch in the browser opens the wizard.
+  /// Restores the last theme, then opens the shared or gallery link the page
+  /// was opened with, if any. On first launch in the browser, with nothing
+  /// to open, it shows the wizard.
   Future<void> _start() async {
-    final shared = readShareParam();
-    if (shared != null) {
-      clearShareParam();
-      if (await openSharedTheme(shared)) return;
-    }
+    final shared = readUrlParam(shareParam);
+    final gallery = readUrlParam(galleryParam);
+    clearUrlParams({shareParam, galleryParam});
+    // The user's own theme comes first: it's what the editor shows behind the
+    // "replace it?" question, and what stays if the link is broken.
     final restored = await _controller.restoreAutosave();
+    if (shared != null && await openSharedTheme(shared)) return;
+    if (gallery != null && await openGalleryTheme(gallery)) return;
     if (!restored && kIsWeb && mounted) {
       await showNewThemeWizard(context, _controller);
     }
   }
 
-  /// Opens the theme of a shared link (`?t=` value). Asks first if it would
-  /// replace a different theme the user was working on. True if the editor
-  /// now shows a theme (the shared one or the user's own).
+  /// Opens the theme of a shared link (`?t=` value). True if it was opened
+  /// or the user chose to keep their own.
   @visibleForTesting
   Future<bool> openSharedTheme(String payload) async {
     await WidgetsBinding.instance.endOfFrame;
@@ -62,38 +66,64 @@ class EditorPageState extends State<EditorPage> {
       _toast(e.message);
       return false;
     }
-    final sharedName = shared.name ?? 'Shared theme';
+    return _openTheme(shared.theme, shared.name ?? 'Shared theme', 'shared');
+  }
 
-    final mine = _controller.readAutosavedTheme();
-    if (mine != null &&
-        mine.theme.hasUserChoices &&
-        !sameTheme(mine.theme, shared.theme)) {
-      final choice = await _askReplace(sharedName, mine.name ?? 'My theme');
+  /// Opens a gallery theme by slug (`?g=` value).
+  @visibleForTesting
+  Future<bool> openGalleryTheme(String slug) async {
+    final entries = await loadGallery();
+    if (!mounted) return false;
+    final entry = entries.where((e) => e.slug == slug).firstOrNull;
+    if (entry == null) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (mounted) _toast("This theme isn't in the gallery (any more).");
+      return false;
+    }
+    return _openTheme(copyLayeredTheme(entry.theme), entry.name, 'gallery');
+  }
+
+  Future<void> _showGallery() async {
+    final entry = await showGalleryDialog(context);
+    if (entry == null || !mounted) return;
+    await _openTheme(copyLayeredTheme(entry.theme), entry.name, 'gallery');
+  }
+
+  /// Puts [theme] in the editor, asking first if it would replace a different
+  /// theme the user was working on. [kind] says where it comes from
+  /// ("shared", "gallery").
+  Future<bool> _openTheme(LayeredTheme theme, String name, String kind) async {
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return false;
+    if (_controller.hasEdits && !sameTheme(_controller.theme, theme)) {
+      final choice = await _askReplace(kind, name, _controller.themeName);
       if (!mounted) return false;
       switch (choice) {
         case _ReplaceChoice.keep:
-          await _controller.adopt(mine.theme, name: mine.name);
           return true;
         case _ReplaceChoice.saveFirst:
-          downloadText(fileNameFor(mine.name ?? 'My theme'), mine.json);
+          _save();
         case _ReplaceChoice.open:
           break;
       }
     }
-    await _controller.adopt(shared.theme, name: sharedName);
-    if (mounted) _toast('Opened the shared theme "$sharedName"');
+    await _controller.adopt(theme, name: name);
+    if (mounted) _toast('Opened the $kind theme "$name"');
     return true;
   }
 
-  Future<_ReplaceChoice> _askReplace(String shared, String mine) async {
+  Future<_ReplaceChoice> _askReplace(
+    String kind,
+    String incoming,
+    String mine,
+  ) async {
     final choice = await showDialog<_ReplaceChoice>(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Open the shared theme?'),
+        title: Text('Open the $kind theme?'),
         content: Text(
-          'The link opens "$shared". It replaces the theme you were working '
-          'on, "$mine".',
+          '"$incoming" replaces the theme you were working on, "$mine".',
         ),
         actions: [
           TextButton(
@@ -106,7 +136,7 @@ class EditorPageState extends State<EditorPage> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, _ReplaceChoice.open),
-            child: const Text('Open shared theme'),
+            child: Text('Open $kind theme'),
           ),
         ],
       ),
@@ -215,6 +245,11 @@ class EditorPageState extends State<EditorPage> {
           SizedBox(
             height: 24,
             child: VerticalDivider(width: 24, color: cs.outlineVariant),
+          ),
+          TextButton.icon(
+            onPressed: _showGallery,
+            icon: const Icon(Icons.grid_view_outlined, size: 18),
+            label: const Text('Gallery'),
           ),
           TextButton.icon(
             onPressed: _newTheme,

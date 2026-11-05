@@ -1,0 +1,16 @@
+{
+  "format": "materialcraft-theme",
+  "version": 1,
+  "name": "Sunset Pop",
+  "style": "neobrutalism.orange",
+  "colors": {},
+  "globals": {
+    "radius": 8
+  },
+  "edits": {},
+  "gallery": {
+    "author": "danieleorlando",
+    "description": "Neobrutalism in orange with 8px corners and buttons that sink.",
+    "added": "2026-11-05"
+  }
+}

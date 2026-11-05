@@ -1,0 +1,17 @@
+{
+  "format": "materialcraft-theme",
+  "version": 1,
+  "name": "Rose Luma",
+  "style": "shadcn.luma",
+  "colors": {
+    "primary": "FFC70036",
+    "neutralFamily": "stone"
+  },
+  "globals": {},
+  "edits": {},
+  "gallery": {
+    "author": "danieleorlando",
+    "description": "Soft, fluid shadcn/ui Luma with the rose accent on stone.",
+    "added": "2026-11-05"
+  }
+}

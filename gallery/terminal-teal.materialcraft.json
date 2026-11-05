@@ -1,0 +1,17 @@
+{
+  "format": "materialcraft-theme",
+  "version": 1,
+  "name": "Terminal Teal",
+  "style": "shadcn.lyra",
+  "colors": {
+    "primary": "FF00786F",
+    "neutralFamily": "olive"
+  },
+  "globals": {},
+  "edits": {},
+  "gallery": {
+    "author": "danieleorlando",
+    "description": "Boxy shadcn/ui Lyra with a teal accent on olive grays.",
+    "added": "2026-11-05"
+  }
+}

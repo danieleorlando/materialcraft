@@ -1,0 +1,17 @@
+{
+  "format": "materialcraft-theme",
+  "version": 1,
+  "name": "Emerald Board",
+  "style": "boardui",
+  "colors": {
+    "primary": "FF10B981",
+    "neutralFamily": "slate"
+  },
+  "globals": {},
+  "edits": {},
+  "gallery": {
+    "author": "danieleorlando",
+    "description": "BoardUI SaaS look with an emerald accent and slate neutrals.",
+    "added": "2026-11-05"
+  }
+}

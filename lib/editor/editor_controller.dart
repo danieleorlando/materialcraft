@@ -179,19 +179,6 @@ class EditorController extends ChangeNotifier {
   String shareLink() =>
       shareUrl(theme, name: themeName, baseUrl: editorBaseUrl());
 
-  /// The theme in the last autosave, or null if there's none or it can't
-  /// be read.
-  ({LayeredTheme theme, String? name, String json})? readAutosavedTheme() {
-    final text = readAutosave();
-    if (text == null) return null;
-    try {
-      final t = layeredThemeFromJson(jsonDecode(text));
-      return (theme: t.theme, name: t.name, json: text);
-    } catch (_) {
-      return null;
-    }
-  }
-
   /// Restores the last autosaved theme. True if there was one.
   Future<bool> restoreAutosave() async {
     final text = readAutosave();
