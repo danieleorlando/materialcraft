@@ -91,7 +91,7 @@ jobs:
               echo "It didn't pass the automatic checks ([details]($RUN_URL))."
             fi
             echo
-            echo "You can fix it and open a new submission from the MaterialCraft gallery."
+            echo "You can fix it and open a new submission with Submit in the MaterialCraft editor."
           } > .gallery-comment
           gh issue comment "$ISSUE_NUMBER" --body-file .gallery-comment
           gh issue close "$ISSUE_NUMBER" --reason "not planned"

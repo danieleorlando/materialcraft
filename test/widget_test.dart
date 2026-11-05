@@ -2906,10 +2906,7 @@ void _galleryTests() {
 
     testWidgets('Submit asks to customize an untouched theme', (tester) async {
       await startEditor(tester);
-      await useBundledGallery(tester);
-      await tester.tap(find.text('Gallery'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Submit your theme'));
+      await tester.tap(find.text('Submit'));
       await tester.pumpAndSettle();
       expect(
         find.textContaining('Make the theme your own first'),
