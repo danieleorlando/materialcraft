@@ -1,3 +1,4 @@
+import 'share_link.dart';
 import 'theme_json.dart';
 import 'theme_layers.dart';
 
@@ -110,4 +111,27 @@ GalleryEntry galleryEntryFromJson(String slug, Object? json) {
 int compareGalleryEntries(GalleryEntry a, GalleryEntry b) {
   final byDate = b.added.compareTo(a.added);
   return byDate != 0 ? byDate : a.name.compareTo(b.name);
+}
+
+/// GitHub repository that hosts the gallery.
+const galleryRepoUrl = 'https://github.com/danieleorlando/materialcraft';
+
+/// New issue on GitHub with the gallery form filled in for [theme]: the
+/// submission workflow turns it into a pull request.
+String gallerySubmissionUrl(LayeredTheme theme, String name) {
+  var title = name.trim();
+  if (title.length > maxGalleryNameLength) {
+    title = title.substring(0, maxGalleryNameLength).trim();
+  }
+  return Uri.parse('$galleryRepoUrl/issues/new')
+      .replace(
+        queryParameters: {
+          'template': 'gallery.yml',
+          'title': '[Gallery] $title',
+          'labels': 'gallery',
+          'link': shareUrl(theme, name: title),
+          'name': title,
+        },
+      )
+      .toString();
 }

@@ -54,14 +54,19 @@ String galleryLink(String slug, {String? baseUrl}) => Uri.parse(
 ).replace(queryParameters: {galleryParam: slug}).toString();
 
 /// Shows the gallery; returns the theme the user chose to open.
-Future<GalleryEntry?> showGalleryDialog(BuildContext context) =>
-    showDialog<GalleryEntry>(
-      context: context,
-      builder: (context) => const _GalleryDialog(),
-    );
+/// [onSubmit] sends the current theme to the gallery.
+Future<GalleryEntry?> showGalleryDialog(
+  BuildContext context, {
+  VoidCallback? onSubmit,
+}) => showDialog<GalleryEntry>(
+  context: context,
+  builder: (context) => _GalleryDialog(onSubmit: onSubmit),
+);
 
 class _GalleryDialog extends StatelessWidget {
-  const _GalleryDialog();
+  const _GalleryDialog({this.onSubmit});
+
+  final VoidCallback? onSubmit;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +105,20 @@ class _GalleryDialog extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (onSubmit != null) ...[
+                    Tooltip(
+                      message:
+                          'Opens a prefilled issue on GitHub (you need a '
+                          'GitHub account). A bot checks the theme and opens '
+                          'a pull request.',
+                      child: FilledButton.tonalIcon(
+                        onPressed: onSubmit,
+                        icon: const Icon(Icons.upload_outlined, size: 18),
+                        label: const Text('Submit your theme'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   IconButton(
                     tooltip: 'Close',
                     onPressed: () => Navigator.pop(context),

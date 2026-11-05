@@ -1,0 +1,97 @@
+# Turns a "Submit a theme to the gallery" issue into a pull request.
+#
+# The issue text is untrusted: it reaches the script only through an
+# environment variable and is never interpolated into a command.
+# Needs Settings → Actions → General → "Allow GitHub Actions to create and
+# approve pull requests". Pull requests opened with GITHUB_TOKEN don't start
+# other workflows, so the theme is checked here, before the PR is opened.
+name: Gallery submission
+
+on:
+  issues:
+    types: [opened, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: gallery-submission
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    if: >-
+      contains(github.event.issue.labels.*.name, 'gallery') ||
+      startsWith(github.event.issue.title, '[Gallery]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the submission
+        id: read
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+          ISSUE_AUTHOR_ID: ${{ github.event.issue.user.id }}
+        run: python3 -I tool/gallery_submission.py
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.35.7
+          cache: true
+
+      - name: Check the theme
+        id: check
+        run: |
+          flutter pub get
+          flutter test test/gallery_test.dart
+
+      - name: Open the pull request
+        env:
+          SLUG: ${{ steps.read.outputs.slug }}
+          NAME: ${{ steps.read.outputs.name }}
+        run: |
+          branch="gallery/${SLUG}-${ISSUE_NUMBER}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add "gallery/${SLUG}.materialcraft.json"
+          git commit -F .gallery-commit-msg
+          git push --force origin "$branch"
+          url=$(gh pr create --base "${{ github.event.repository.default_branch }}" \
+            --head "$branch" --title "Gallery: $NAME" --body-file .gallery-pr-body)
+          printf 'Thanks! Your theme passed the checks and is waiting for review in %s.\nIt will appear in the gallery once it is merged.\n' "$url" > .gallery-comment
+          gh issue comment "$ISSUE_NUMBER" --body-file .gallery-comment
+
+      - name: Explain what went wrong
+        if: failure()
+        env:
+          CHECK: ${{ steps.check.outcome }}
+        run: |
+          if [ "$CHECK" = "success" ]; then
+            # The theme is fine: the problem is on the repository's side.
+            printf 'Thanks! Your theme passed the checks, but the pull request could not be opened automatically ([details](%s)). The maintainer will add it by hand.\n' "$RUN_URL" > .gallery-comment
+            gh issue comment "$ISSUE_NUMBER" --body-file .gallery-comment
+            exit 0
+          fi
+          {
+            echo "Sorry, the theme couldn't be added to the gallery."
+            echo
+            if [ -s .gallery-error ]; then
+              cat .gallery-error
+            else
+              echo "It didn't pass the automatic checks ([details]($RUN_URL))."
+            fi
+            echo
+            echo "You can fix it and open a new submission from the MaterialCraft gallery."
+          } > .gallery-comment
+          gh issue comment "$ISSUE_NUMBER" --body-file .gallery-comment
+          gh issue close "$ISSUE_NUMBER" --reason "not planned"
