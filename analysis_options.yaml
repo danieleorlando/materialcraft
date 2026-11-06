@@ -13,6 +13,8 @@ analyzer:
     - android/**
     - ios/**
     - web/**
+    # Analyzed on its own, with its own lints (see CI).
+    - packages/**
 include: package:flutter_lints/flutter.yaml
 
 linter:
