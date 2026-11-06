@@ -25,6 +25,7 @@ import 'package:materialcraft_app/model/theme_json.dart';
 import 'package:materialcraft_app/model/share_link.dart';
 import 'package:materialcraft_app/model/gallery.dart';
 import 'package:materialcraft_app/editor/gallery_page.dart';
+import 'package:materialcraft_app/editor/widgets/github_icon.dart';
 import 'package:materialcraft_app/editor/new_theme_wizard.dart';
 import 'package:materialcraft_app/editor/preview_showcases.dart';
 
@@ -86,6 +87,25 @@ void main() {
     await tester.tap(find.text('Global properties').first);
     await tester.pumpAndSettle();
     expect(find.text('Pill-shaped buttons'), findsOneWidget);
+  });
+
+  testWidgets('the GitHub button shows the GitHub mark', (tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(const MaterialCraftApp());
+    final button = find.byTooltip('MaterialCraft on GitHub');
+    expect(
+      find.descendant(of: button, matching: find.byType(GitHubIcon)),
+      findsOneWidget,
+    );
+    expect(tester.getSize(find.byType(GitHubIcon)), const Size(20, 20));
+    // The mark fills its 16×16 grid.
+    final bounds = gitHubMark.getBounds();
+    expect(bounds.left, closeTo(0, 0.01));
+    expect(bounds.top, closeTo(0, 0.01));
+    expect(bounds.right, closeTo(16, 0.05));
+    expect(bounds.bottom, inInclusiveRange(15.5, 16));
   });
 
   testWidgets('About: author, services and links', (tester) async {

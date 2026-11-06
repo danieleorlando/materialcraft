@@ -13,6 +13,7 @@ import 'export_dialog.dart';
 import 'gallery_page.dart';
 import 'new_theme_wizard.dart';
 import 'storage/storage.dart';
+import 'widgets/github_icon.dart';
 import 'preview_pane.dart';
 import 'properties_panel.dart';
 import 'style_properties.dart';
@@ -261,7 +262,7 @@ class EditorPageState extends State<EditorPage> {
           IconButton(
             tooltip: 'MaterialCraft on GitHub',
             onPressed: () => openUrl(repoUrl),
-            icon: const Icon(Icons.star_outline, size: 20),
+            icon: const GitHubIcon(size: 20),
           ),
           SizedBox(
             height: 24,
