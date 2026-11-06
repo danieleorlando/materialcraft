@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:material_color_utilities/material_color_utilities.dart';
 
 import 'color_ref.dart';
@@ -94,7 +94,7 @@ Map<SchemeRole, ColorRef> materialKeyColorRoles({
   Map<SchemeRole, Color> roles(bool dark) {
     final base = _baseScheme(seed, variant, dark);
     DynamicScheme scheme(TonalPalette primaryPalette) => DynamicScheme(
-      sourceColorArgb: seed.toInt(),
+      sourceColorHct: seed,
       variant: base.variant,
       isDark: dark,
       primaryPalette: primaryPalette,

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Rounded rectangle with a border and a shadow: either "hard" (offset, no
 /// blur, like the neobrutalism `box-shadow: 4px 4px 0 0`) or soft, CSS style
@@ -7,7 +7,8 @@ import 'package:flutter/material.dart';
 /// Use it as `shape:` in themes (card, dialog, menu, chip, FAB…): the shadow
 /// is painted only outside the container, so it never covers the content.
 class HardShadowBorder extends OutlinedBorder {
-  const HardShadowBorder({
+  /// A border with a hard or soft shadow; [side] is the border.
+  const new({
     super.side,
     this.radius = 0,
     this.shadowOffset = Offset.zero,
@@ -16,9 +17,16 @@ class HardShadowBorder extends OutlinedBorder {
     this.shadows = const [],
   });
 
+  /// Corner radius.
   final double radius;
+
+  /// Offset of the hard shadow (zero = no hard shadow, unless spread).
   final Offset shadowOffset;
+
+  /// Color of the hard shadow.
   final Color shadowColor;
+
+  /// Spread of the hard shadow.
   final double shadowSpread;
 
   /// Soft (CSS) shadows, painted only outside the container.
@@ -84,28 +92,15 @@ class HardShadowBorder extends OutlinedBorder {
 
   @override
   ShapeBorder? lerpFrom(ShapeBorder? a, double t) {
-    if (a is HardShadowBorder) return _lerp(a, this, t);
+    if (a is HardShadowBorder) return _lerpHardShadow(a, this, t);
     return super.lerpFrom(a, t);
   }
 
   @override
   ShapeBorder? lerpTo(ShapeBorder? b, double t) {
-    if (b is HardShadowBorder) return _lerp(this, b, t);
+    if (b is HardShadowBorder) return _lerpHardShadow(this, b, t);
     return super.lerpTo(b, t);
   }
-
-  static HardShadowBorder _lerp(
-    HardShadowBorder a,
-    HardShadowBorder b,
-    double t,
-  ) => HardShadowBorder(
-    side: BorderSide.lerp(a.side, b.side, t),
-    radius: _mix(a.radius, b.radius, t),
-    shadowOffset: Offset.lerp(a.shadowOffset, b.shadowOffset, t)!,
-    shadowColor: Color.lerp(a.shadowColor, b.shadowColor, t)!,
-    shadowSpread: _mix(a.shadowSpread, b.shadowSpread, t),
-    shadows: BoxShadow.lerpList(a.shadows, b.shadows, t) ?? const [],
-  );
 
   @override
   bool operator ==(Object other) =>
@@ -145,13 +140,14 @@ void paintSoftShadows(
 ) {
   if (shadows.isEmpty) return;
   final shape = RRect.fromRectAndRadius(rect, Radius.circular(radius));
-  canvas.save();
-  canvas.clipPath(
-    Path()
-      ..fillType = PathFillType.evenOdd
-      ..addRect(rect.inflate(1000))
-      ..addRRect(shape),
-  );
+  canvas
+    ..save()
+    ..clipPath(
+      Path()
+        ..fillType = PathFillType.evenOdd
+        ..addRect(rect.inflate(1000))
+        ..addRRect(shape),
+    );
   for (final s in shadows) {
     canvas.drawRRect(
       shape.shift(s.offset).inflate(s.spreadRadius),
@@ -160,6 +156,19 @@ void paintSoftShadows(
   }
   canvas.restore();
 }
+
+HardShadowBorder _lerpHardShadow(
+  HardShadowBorder a,
+  HardShadowBorder b,
+  double t,
+) => HardShadowBorder(
+  side: BorderSide.lerp(a.side, b.side, t),
+  radius: _mix(a.radius, b.radius, t),
+  shadowOffset: Offset.lerp(a.shadowOffset, b.shadowOffset, t)!,
+  shadowColor: Color.lerp(a.shadowColor, b.shadowColor, t)!,
+  shadowSpread: _mix(a.shadowSpread, b.shadowSpread, t),
+  shadows: BoxShadow.lerpList(a.shadows, b.shadows, t) ?? const [],
+);
 
 double _mix(double a, double b, double t) => a + (b - a) * t;
 
@@ -180,21 +189,23 @@ void paintHardShadow(
   // Clip to the outside of the shape, then paint: on the web (CanvasKit)
   // Path.combine(difference) gets concentric rectangles wrong (focus ring)
   // and fills the inside too.
-  canvas.save();
-  canvas.clipPath(
-    Path()
-      ..fillType = PathFillType.evenOdd
-      ..addRect(outer.outerRect.inflate(1))
-      ..addRRect(inner),
-  );
-  canvas.drawRRect(outer, Paint()..color = color);
-  canvas.restore();
+  canvas
+    ..save()
+    ..clipPath(
+      Path()
+        ..fillType = PathFillType.evenOdd
+        ..addRect(outer.outerRect.inflate(1))
+        ..addRRect(inner),
+    )
+    ..drawRRect(outer, Paint()..color = color)
+    ..restore();
 }
 
 /// Text field border with a hard shadow (per state, via
 /// `WidgetStateInputBorder.resolveWith`).
 class HardShadowInputBorder extends OutlineInputBorder {
-  const HardShadowInputBorder({
+  /// A text field border with a hard or soft shadow.
+  const new({
     super.borderSide,
     super.borderRadius = BorderRadius.zero,
     super.gapPadding,
@@ -204,7 +215,10 @@ class HardShadowInputBorder extends OutlineInputBorder {
     this.shadows = const [],
   });
 
+  /// Offset of the hard shadow.
   final Offset shadowOffset;
+
+  /// Color of the hard shadow.
   final Color shadowColor;
 
   /// Shadow spread: with a zero offset it becomes a ring (focus ring).

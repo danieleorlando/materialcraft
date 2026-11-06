@@ -68,6 +68,21 @@ Two modes:
   [`materialcraft`](packages/materialcraft) from pub.dev, so it stays short
   and you get fixes with `flutter pub upgrade`.
 
+And two Material libraries:
+
+- **material_ui** (default): for Flutter 3.47+ apps migrated to the
+  [`material_ui`](https://pub.dev/packages/material_ui) package
+  (`dart fix --apply --code=migrate_design_widgets`); uses `materialcraft`
+  ^0.2.0.
+- **flutter/material**: for Flutter before 3.47, or apps that still import
+  `package:flutter/material.dart`; uses `materialcraft` ^0.1.0.
+
+The exported code is formatted with `dart format` and passes
+[`very_good_analysis`](https://pub.dev/packages/very_good_analysis).
+`AppTheme.light()` / `dark()` also take an optional `ColorScheme`, for the
+Android 12+ dynamic colors of
+[`dynamic_color`](https://pub.dev/packages/dynamic_color).
+
 The **How to use it** tab lists only the steps your theme actually needs, such
 as adding fonts or using `AppSwitch`, with before/after code.
 
@@ -87,7 +102,7 @@ request, and the theme shows up with your GitHub name once it's merged.
 
 ## Run it locally
 
-Requires Flutter 3.35 or later.
+Requires Flutter 3.47 or later.
 
 ```sh
 flutter pub get
@@ -113,6 +128,13 @@ flutter test
 
 After changing the package sources, run `tool/gen_skin_source.sh` so that
 standalone exports include the same code. A test fails if you forget.
+
+The package keeps two lines: `main` holds 0.2.x (`material_ui`), the
+`release/0.1.x` branch holds 0.1.x (`flutter/material`, Flutter 3.35+) for
+bug fixes. Fix on `main`, cherry-pick onto `release/0.1.x` keeping the
+`flutter/material` import, bump to 0.1.(n+1), test with Flutter 3.35 and
+publish from that branch. The tag of each release is
+`materialcraft-v<version>`.
 
 ## Credits
 

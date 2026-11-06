@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../export/usage_notes.dart';
 import '../model/color_ref.dart';
@@ -18,7 +18,7 @@ import 'widgets/color_picker_dialog.dart';
 import 'widgets/property_fields.dart';
 import 'widgets/usage_callout.dart';
 
-const fontWeightOptions = <FontWeight, String>{
+final fontWeightOptions = <FontWeight, String>{
   FontWeight.w300: 'Light (300)',
   FontWeight.w400: 'Regular (400)',
   FontWeight.w500: 'Medium (500)',

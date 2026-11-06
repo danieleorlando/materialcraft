@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:materialcraft/materialcraft.dart';
 
 import '../model/surface_config.dart';

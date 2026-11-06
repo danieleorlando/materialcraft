@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Look of a button in one state. `null` fields inherit from the normal
 /// state.
 @immutable
 class ButtonSkinState {
-  const ButtonSkinState({
+  /// Look of one state; unset fields inherit from the normal state.
+  const new({
     this.colors,
     this.foreground,
     this.border,
@@ -14,8 +15,14 @@ class ButtonSkinState {
 
   /// One color = solid fill; two = vertical gradient (top → bottom).
   final List<Color>? colors;
+
+  /// Text and icon color.
   final Color? foreground;
+
+  /// Border color (the width is [ButtonSkin.borderWidth]).
   final Color? border;
+
+  /// CSS-style shadows, painted outside the button.
   final List<BoxShadow>? shadows;
 
   /// Offset of the button in this state (does not affect layout).
@@ -29,7 +36,8 @@ class ButtonSkinState {
 /// Usage: `skin.applyTo(FilledButton.styleFrom(...))`.
 @immutable
 class ButtonSkin {
-  const ButtonSkin({
+  /// A skin; [normal] is the look at rest, the other states override it.
+  const new({
     required this.normal,
     this.hovered = const ButtonSkinState(),
     this.pressed = const ButtonSkinState(),
@@ -45,12 +53,25 @@ class ButtonSkin {
     this.duration = const Duration(milliseconds: 150),
   });
 
+  /// Look at rest.
   final ButtonSkinState normal;
+
+  /// Look under the pointer.
   final ButtonSkinState hovered;
+
+  /// Look while pressed.
   final ButtonSkinState pressed;
+
+  /// Look with the keyboard focus.
   final ButtonSkinState focused;
+
+  /// Look when disabled.
   final ButtonSkinState disabled;
+
+  /// Corner radius.
   final double radius;
+
+  /// Border width (0 = no border).
   final double borderWidth;
 
   /// Scale of the button while pressed (1 = no effect).
@@ -58,6 +79,8 @@ class ButtonSkin {
 
   /// Color of the keyboard focus ring (`null` = no ring).
   final Color? focusRing;
+
+  /// Width of the focus ring.
   final double focusRingWidth;
 
   /// Gap between the button and the focus ring.
@@ -140,6 +163,8 @@ class ButtonSkin {
     return 0;
   }
 
+  /// Returns [base] painted by this skin (background, border, shadows,
+  /// focus ring and press effect); the other properties of [base] stay.
   ButtonStyle applyTo(ButtonStyle base) {
     final foreground = WidgetStateProperty.resolveWith(
       (states) => resolve(states).foreground,
@@ -302,7 +327,7 @@ class ButtonSkin {
 
 /// Paints the shadows only outside the button's rounded rectangle.
 class _OuterShadowPainter extends CustomPainter {
-  const _OuterShadowPainter(this.shadows, this.radius);
+  const new(this.shadows, this.radius);
 
   final List<BoxShadow> shadows;
   final double radius;
@@ -313,13 +338,14 @@ class _OuterShadowPainter extends CustomPainter {
       Offset.zero & size,
       Radius.circular(radius),
     );
-    canvas.save();
-    canvas.clipPath(
-      Path()
-        ..fillType = PathFillType.evenOdd
-        ..addRect(shape.outerRect.inflate(1000))
-        ..addRRect(shape),
-    );
+    canvas
+      ..save()
+      ..clipPath(
+        Path()
+          ..fillType = PathFillType.evenOdd
+          ..addRect(shape.outerRect.inflate(1000))
+          ..addRRect(shape),
+      );
     for (final s in shadows) {
       canvas.drawRRect(
         shape.shift(s.offset).inflate(s.spreadRadius),
@@ -338,7 +364,7 @@ class _OuterShadowPainter extends CustomPainter {
 /// a clip area enlarged by [ButtonSkin.bleed], so shadows and the focus ring
 /// are not clipped.
 class _BleedShape extends OutlinedBorder {
-  const _BleedShape(this.radius);
+  const new(this.radius);
 
   final double radius;
 

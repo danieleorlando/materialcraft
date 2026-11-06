@@ -1,10 +1,12 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:materialcraft_app/export/button_skin_source.dart';
 import 'package:materialcraft_app/export/dart_exporter.dart';
+import 'package:materialcraft_app/export/dart_format.dart';
+import 'package:materialcraft_app/export/export_format.dart';
 import 'package:materialcraft_app/export/usage_notes.dart';
 import 'package:materialcraft_app/editor/export_dialog.dart';
 import 'package:materialcraft_app/editor/editor_controller.dart';
@@ -25,7 +27,9 @@ import 'package:materialcraft_app/model/gallery.dart';
 import 'package:materialcraft_app/editor/gallery_page.dart';
 import 'package:materialcraft_app/editor/new_theme_wizard.dart';
 import 'package:materialcraft_app/editor/preview_showcases.dart';
+
 import 'dart:convert';
+
 import 'package:materialcraft_app/model/boardui_token_defs.dart';
 import 'package:materialcraft_app/model/color_math.dart';
 import 'package:materialcraft_app/model/color_sets.dart';
@@ -53,6 +57,8 @@ Widget host(ThemeData theme, Widget child) => MaterialApp(
 );
 
 void main() {
+  setUpAll(loadExportFormatter);
+
   _layerTests();
   _colorTests();
   _projectTests();
@@ -141,10 +147,9 @@ void main() {
   });
 
   test('exported sources are aligned with the runtime', () {
-    String strip(String path) => File(path).readAsStringSync().replaceFirst(
-      "import 'package:flutter/material.dart';\n\n",
-      '',
-    );
+    String strip(String path) => File(path)
+        .readAsStringSync()
+        .replaceFirst("import 'package:material_ui/material_ui.dart';\n\n", '');
     expect(
       buttonSkinSource,
       strip('packages/materialcraft/lib/src/button_skin.dart'),
@@ -170,6 +175,139 @@ void main() {
       strip('packages/materialcraft/lib/src/app_switch.dart'),
       reason: 'Run tool/gen_skin_source.sh',
     );
+  });
+
+  group('export targets', () {
+    ThemeConfig neoConfig() {
+      final c = ThemeConfig();
+      applyNeobrutalism(c, 'yellow');
+      return c;
+    }
+
+    test('material_ui by default, materialcraft ^0.2.0', () {
+      final code = exportDart(neoConfig(), usePackage: true);
+      expect(code, contains("import 'package:material_ui/material_ui.dart';"));
+      expect(code, isNot(contains('package:flutter/material.dart')));
+      expect(code, contains('materialcraft: ^0.2.0'));
+      expect(code, contains('dynamic_color ^2.1.0'));
+    });
+
+    test('flutter/material: materialcraft ^0.1.0 and classic constructors', () {
+      for (final pkg in [false, true]) {
+        final code = exportDart(
+          neoConfig(),
+          usePackage: pkg,
+          target: ExportTarget.flutterMaterial,
+        );
+        expect(code, contains("import 'package:flutter/material.dart';"));
+        expect(code, isNot(contains('material_ui')));
+        expect(code, contains('dynamic_color ^1.8.1'));
+        // Dart 3.13 constructor syntax would not compile on Flutter 3.35.
+        expect(
+          code,
+          isNot(contains(RegExp(r'^\s+(const\s+)?new[ (]', multiLine: true))),
+        );
+        if (pkg) {
+          expect(code, contains('materialcraft: ^0.1.0'));
+        } else {
+          expect(code, contains('  const AppSwitchStyle({'));
+          expect(code, contains('  const ButtonSkinState({'));
+        }
+      }
+      // The theme itself is the same for both targets.
+      String body(ExportTarget t) =>
+          RegExp(r'abstract final class AppTheme \{[\s\S]*?\n\}\n')
+              .firstMatch(exportDart(neoConfig(), target: t))!
+              .group(0)!;
+      expect(body(ExportTarget.flutterMaterial), body(ExportTarget.materialUi));
+    });
+
+    test('legacy constructor syntax', () {
+      expect(
+        legacyConstructorSyntax(
+          'class A {\n'
+          '  const new(this.x);\n'
+          '  const new named() : x = 1;\n'
+          '  factory other() => const A(2);\n'
+          '  factory A.old() => const A(3);\n'
+          '}\n'
+          'final class B {\n'
+          '  new();\n'
+          '}',
+        ),
+        'class A {\n'
+        '  const A(this.x);\n'
+        '  const A.named() : x = 1;\n'
+        '  factory A.other() => const A(2);\n'
+        '  factory A.old() => const A(3);\n'
+        '}\n'
+        'final class B {\n'
+        '  B();\n'
+        '}',
+      );
+    });
+
+    test('AppTheme takes an optional dynamic color scheme', () {
+      final code = exportDart(ThemeConfig());
+      expect(
+        code,
+        contains('static ThemeData light([ColorScheme? dynamicScheme])'),
+      );
+      expect(
+        code,
+        contains('static ThemeData dark([ColorScheme? dynamicScheme])'),
+      );
+      expect(flat(code), contains('final colorScheme = dynamicScheme ?? '));
+    });
+
+    test('the export is already formatted', () {
+      for (final p in ThemePreset.all) {
+        final c = ThemeConfig();
+        p.apply(c);
+        for (final pkg in [false, true]) {
+          final code = exportDart(c, usePackage: pkg);
+          expect(formatDart(code), code, reason: '${p.name} $pkg');
+        }
+      }
+    });
+
+    test('cleanup: named constants, defaults, parentheses, if elements', () {
+      String clean(String s) => formatDart('final x = $s;').trim();
+      expect(
+        clean('BorderRadius.all(Radius.circular(0))'),
+        'final x = BorderRadius.zero;',
+      );
+      expect(clean('Offset(0, 0)'), 'final x = Offset.zero;');
+      expect(clean('EdgeInsets.all(0.0)'), 'final x = EdgeInsets.zero;');
+      expect(
+        clean('BorderSide(color: Color(0xFF000000), width: 1.0)'),
+        'final x = const BorderSide();',
+      );
+      expect(
+        clean('BorderSide(color: Color(0xFF000000), width: 2)'),
+        'final x = const BorderSide(width: 2);',
+      );
+      expect(
+        clean(
+          'RoundedRectangleBorder(side: BorderSide.none, '
+          'borderRadius: BorderRadius.all(Radius.circular(8)))',
+        ),
+        'final x = const RoundedRectangleBorder(\n'
+        '  borderRadius: BorderRadius.all(Radius.circular(8)),\n'
+        ');',
+      );
+      expect(
+        clean('[(isDark ? const Color(0xFF000000) : const Color(0xFFFFFFFF))]'),
+        'final x = '
+        '[if (isDark) const Color(0xFF000000) else const Color(0xFFFFFFFF)];',
+      );
+      expect(clean('f(a: (b?.c())?.d())'), 'final x = f(a: b?.c().d());');
+      // Not const: an argument is not a constant.
+      expect(
+        clean('IconThemeData(color: scheme.primary)'),
+        'final x = IconThemeData(color: scheme.primary);',
+      );
+    });
   });
 
   test(
@@ -739,7 +877,7 @@ void main() {
     test('export: TextTheme with style names and sub-themes', () {
       final c = ThemeConfig();
       ThemePreset.boardUI.applyTo(c);
-      final code = exportDart(c);
+      final code = flat(exportDart(c));
       expect(code, contains('textTheme: const TextTheme('));
       expect(code, contains('/* title-2-medium */ TextStyle(fontSize: 20'));
       expect(code, contains('cardTheme: CardThemeData('));
@@ -879,7 +1017,7 @@ void main() {
 
       final c = ThemeConfig();
       ThemePreset.boardUI.applyTo(c);
-      final code = exportDart(c);
+      final code = flat(exportDart(c));
       expect(code, contains('final filledSkin = ButtonSkin('));
       expect(code, contains('filledSkin.copyWith(radius: 8).applyTo('));
       expect(code, contains('iconButtonTheme: IconButtonThemeData('));
@@ -1205,7 +1343,7 @@ void main() {
     test('export', () {
       final c = ThemeConfig();
       ThemePreset.boardUI.applyTo(c);
-      final code = exportDart(c);
+      final code = flat(exportDart(c));
       for (final part in [
         'checkboxTheme: CheckboxThemeData(',
         'radioTheme: RadioThemeData(',
@@ -1297,7 +1435,7 @@ void main() {
     });
 
     test('AppSwitch always exported, AppSwitchStyle only with geometry', () {
-      final code = exportDart(neo());
+      final code = flat(exportDart(neo()));
       expect(code, contains('class AppSwitch extends StatefulWidget'));
       expect(
         code,
@@ -1325,7 +1463,10 @@ void main() {
     });
 
     test('usage notes: only those the theme needs', () {
-      expect(usageNotes(ThemeConfig()).map((n) => n.id), ['setup']);
+      expect(usageNotes(ThemeConfig()).map((n) => n.id), [
+        'setup',
+        'dynamicColor',
+      ]);
       final c = ThemeConfig();
       applyNeobrutalism(c, 'yellow');
       expect(usageNotes(c).map((n) => n.id), [
@@ -1337,6 +1478,7 @@ void main() {
         'buttonSizes',
         'switch',
         'menu',
+        'dynamicColor',
       ]);
       final fonts = fontsNote(c)!;
       expect(fonts.after, contains('family: Space Grotesk'));
@@ -1458,8 +1600,9 @@ void main() {
         const Offset(4, 4),
       );
       expect(
-        (field.resolve({WidgetState.focused}) as HardShadowInputBorder)
-            .shadowOffset,
+        (field.resolve({
+          WidgetState.focused,
+        }) as HardShadowInputBorder).shadowOffset,
         const Offset(1, 1),
       );
     });
@@ -1568,7 +1711,7 @@ void main() {
     test('export: heading font, hard shadows and sources included', () {
       final c = ThemeConfig();
       applyNeobrutalism(c, 'yellow');
-      final code = exportDart(c);
+      final code = flat(exportDart(c));
       expect(code, contains("fontFamily: 'Space Grotesk'"));
       expect(code, contains("TextStyle(fontFamily: 'Archivo Black'"));
       expect(code, contains('HardShadowBorder('));
@@ -3071,3 +3214,11 @@ void _galleryTests() {
     });
   });
 }
+
+/// The exported code on one line, as the exporter writes it before
+/// `dart format` splits it.
+String flat(String code) => code
+    .replaceAllMapped(RegExp(r',\s*([)\]}])'), (m) => m[1]!)
+    .replaceAllMapped(RegExp(r'([(\[{])\s+'), (m) => m[1]!)
+    .replaceAllMapped(RegExp(r'\s+([)\]}.])'), (m) => m[1]!)
+    .replaceAll(RegExp(r'\s+'), ' ');

@@ -1,27 +1,56 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Buttons that can have an extra style in the theme.
 enum AppButtonKind {
+  /// ElevatedButton.
   elevated,
+
+  /// FilledButton.
   filled,
+
+  /// OutlinedButton.
   outlined,
+
+  /// TextButton.
   text,
+
+  /// IconButton.
   icon,
+
+  /// Destructive action (a FilledButton with the danger style).
   danger,
+
+  /// Button without background or border until hovered.
   ghost,
+
+  /// IconButton with the secondary style.
   iconSecondary,
 }
 
 /// Button sizes. `medium` is the one defined by the theme.
-enum AppButtonSize { medium, large, small, xs }
+enum AppButtonSize {
+  /// The size of the button's Material theme.
+  medium,
+
+  /// Larger than medium.
+  large,
+
+  /// Smaller than medium.
+  small,
+
+  /// The smallest size.
+  xs,
+}
 
 /// Button styles that Material has no theme for: variants (e.g. danger) and
 /// sizes (large, small, xs). Read them with
 /// [AppButtonStylesContext.buttonStyle].
 @immutable
 class AppButtonStyles extends ThemeExtension<AppButtonStyles> {
-  const AppButtonStyles([this.styles = const {}]);
+  /// Extra styles, by button kind and size.
+  const new([this.styles = const {}]);
 
+  /// The styles, by button kind and size.
   final Map<(AppButtonKind, AppButtonSize), ButtonStyle> styles;
 
   /// Style for [kind] and [size]; `null` means "use the button's theme"
@@ -45,6 +74,7 @@ class AppButtonStyles extends ThemeExtension<AppButtonStyles> {
       other == null || t < 0.5 ? this : other;
 }
 
+/// Reads [AppButtonStyles] from the theme.
 extension AppButtonStylesContext on BuildContext {
   /// E.g. `FilledButton(style: context.buttonStyle(AppButtonKind.danger), ...)`
   /// or `OutlinedButton(style: context.buttonStyle(AppButtonKind.outlined,

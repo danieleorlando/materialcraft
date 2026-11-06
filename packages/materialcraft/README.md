@@ -48,14 +48,21 @@ fine-tune about 30 components, with light and dark previewed side by side.
 
 ## 🚀 Quick start
 
+Version 0.2 is built on [`material_ui`](https://pub.dev/packages/material_ui),
+the Material library that Flutter 3.47 moved out of the framework. It needs
+Flutter 3.47 or later and an app that imports
+`package:material_ui/material_ui.dart` (see
+[Which version?](#-which-version)).
+
 1. Design your theme at
    **[materialcraft.danieleorlando.me](https://materialcraft.danieleorlando.me)**.
-2. Export it in **With package** mode and add `app_theme.dart` to your project.
+2. Export it in **With package** mode, **material_ui** library, and add
+   `app_theme.dart` to your project.
 3. Add the dependency:
 
 ```yaml
 dependencies:
-  materialcraft: ^0.1.1
+  materialcraft: ^0.2.0
 ```
 
 4. Use the theme:
@@ -111,6 +118,55 @@ OutlinedButton(
 ```dart
 AppSwitch(value: on, onChanged: (v) => setState(() => on = v));
 ```
+
+### Dynamic color (Android 12+)
+
+`AppTheme.light()` and `AppTheme.dark()` take an optional `ColorScheme` that
+replaces the theme's own scheme, for example the wallpaper colors from
+[`dynamic_color`](https://pub.dev/packages/dynamic_color). Where the system
+has none (`null`) the theme's scheme is used; colors that the theme sets
+outside the scheme stay as designed.
+
+```dart
+DynamicColorBuilder(
+  builder: (light, dark) => MaterialApp(
+    theme: AppTheme.light(light),
+    darkTheme: AppTheme.dark(dark),
+    home: const HomePage(),
+  ),
+);
+```
+
+## 🧭 Which version?
+
+| Your app | materialcraft | Export in the editor |
+| --- | --- | --- |
+| Flutter 3.47+, imports `package:material_ui/material_ui.dart` | `^0.2.0` | **material_ui** |
+| Flutter before 3.47, or still imports `package:flutter/material.dart` | `^0.1.0` | **flutter/material** |
+
+The two libraries have classes with the same names but different types: a
+`ThemeData` from `material_ui` cannot be passed where the framework's
+`ThemeData` is expected. The theme, the package and your app must all use the
+same one. The 0.1.x line stays available and gets bug fixes for apps that
+have not moved to `material_ui`.
+
+### Migrating from 0.1.x
+
+1. Move to Flutter 3.47 and migrate the app to `material_ui`:
+
+   ```sh
+   dart fix --apply --code=migrate_design_widgets
+   ```
+
+2. Update the dependency to `materialcraft: ^0.2.0`.
+3. Export the theme again with the **material_ui** library, or, in your
+   current `app_theme.dart`, replace
+   `import 'package:flutter/material.dart';` with
+   `import 'package:material_ui/material_ui.dart';`.
+4. If you use `dynamic_color`, update it to `^2.1.0` (the version built on
+   `material_ui`).
+
+The API is the same as 0.1.x: no code that uses the package needs changes.
 
 ## 🙏 Credits
 

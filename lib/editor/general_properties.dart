@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../export/usage_notes.dart';
 import '../model/global_tokens.dart';

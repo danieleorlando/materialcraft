@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Geometry of the switch painted by [AppSwitch]. Colors come from
 /// `SwitchThemeData` (track, thumb, outline), just like for `Switch`.
 @immutable
 class AppSwitchStyle extends ThemeExtension<AppSwitchStyle> {
-  const AppSwitchStyle({
+  /// Switch geometry; the defaults are Material 3's.
+  const new({
     this.width = 52,
     this.height = 32,
     this.thumbSize = 24,
@@ -17,18 +18,26 @@ class AppSwitchStyle extends ThemeExtension<AppSwitchStyle> {
 
   /// Outer size of the track, border included (like CSS border-box).
   final double width;
+
+  /// Outer height of the track, border included.
   final double height;
 
   /// Side of the thumb.
   final double thumbSize;
 
-  /// Corner radii: `null` means pill / circle.
+  /// Corner radius of the track (`null` = pill).
   final double? trackRadius;
+
+  /// Corner radius of the thumb (`null` = circle).
   final double? thumbRadius;
 
   /// The thumb has the same outline as the track.
   final bool thumbBorder;
+
+  /// Shadows of the thumb.
   final List<BoxShadow> thumbShadows;
+
+  /// Duration of the thumb movement.
   final Duration duration;
 
   @override
@@ -66,17 +75,25 @@ class AppSwitchStyle extends ThemeExtension<AppSwitchStyle> {
 /// AppSwitch(value: on, onChanged: (v) => setState(() => on = v))
 /// ```
 class AppSwitch extends StatefulWidget {
-  const AppSwitch({
-    super.key,
+  /// A switch; [value] and [onChanged] work like in `Switch`.
+  const new({
     required this.value,
     required this.onChanged,
+    super.key,
     this.focusNode,
     this.autofocus = false,
   });
 
+  /// Whether the switch is on.
   final bool value;
+
+  /// Called with the new value; `null` disables the switch.
   final ValueChanged<bool>? onChanged;
+
+  /// Focus node, as in `Switch`.
   final FocusNode? focusNode;
+
+  /// Whether to take the focus when first shown.
   final bool autofocus;
 
   @override

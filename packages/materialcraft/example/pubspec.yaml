@@ -3,10 +3,12 @@ description: Example for the materialcraft package.
 publish_to: none
 
 environment:
-  sdk: ^3.9.2
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
 
 dependencies:
   flutter:
     sdk: flutter
+  material_ui: ^1.10.0
   materialcraft:
     path: ..

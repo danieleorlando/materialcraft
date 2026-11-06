@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:materialcraft/materialcraft.dart';
 
 void main() => runApp(const ExampleApp());
@@ -28,16 +28,20 @@ ThemeData buildTheme() {
   );
 }
 
+/// The example app.
 class ExampleApp extends StatelessWidget {
-  const ExampleApp({super.key});
+  /// Creates the app.
+  const new({super.key});
 
   @override
   Widget build(BuildContext context) =>
       MaterialApp(theme: buildTheme(), home: const ExamplePage());
 }
 
+/// A page with a danger button and an [AppSwitch].
 class ExamplePage extends StatefulWidget {
-  const ExamplePage({super.key});
+  /// Creates the page.
+  const new({super.key});
 
   @override
   State<ExamplePage> createState() => _ExamplePageState();
