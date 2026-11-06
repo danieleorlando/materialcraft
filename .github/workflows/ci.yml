@@ -17,10 +17,16 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.35.7
+          flutter-version: 3.47.9
           cache: true
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
+      - name: materialcraft package
+        working-directory: packages/materialcraft
+        run: |
+          flutter pub get
+          flutter analyze
+          flutter test
       - name: Gallery submission script
         run: python3 -m unittest discover -s tool

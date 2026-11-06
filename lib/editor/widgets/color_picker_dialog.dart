@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../model/boardui_tokens.dart';
 import '../../model/color_ref.dart';

@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Slider thumb: filled circle with a border and CSS-style shadows. It grows
 /// slightly while dragged.
 class SoftSliderThumbShape extends SliderComponentShape {
-  const SoftSliderThumbShape({
-    this.radius = 10,
+  /// A thumb of [color] with an optional border and shadows.
+  const new({
     required this.color,
+    this.radius = 10,
     this.borderColor,
     this.borderWidth = 1,
     this.shadows = const [],
@@ -13,10 +14,19 @@ class SoftSliderThumbShape extends SliderComponentShape {
     this.cornerRadius,
   });
 
+  /// Radius of the thumb at rest.
   final double radius;
+
+  /// Fill color.
   final Color color;
+
+  /// Border color (`null` = no border).
   final Color? borderColor;
+
+  /// Border width.
   final double borderWidth;
+
+  /// CSS-style shadows.
   final List<BoxShadow> shadows;
 
   /// Scale of the thumb while dragged.
@@ -59,9 +69,10 @@ class SoftSliderThumbShape extends SliderComponentShape {
 
 /// Like [SoftSliderThumbShape], for the two thumbs of a `RangeSlider`.
 class SoftRangeSliderThumbShape extends RangeSliderThumbShape {
-  const SoftRangeSliderThumbShape({
-    this.radius = 10,
+  /// The same options as [SoftSliderThumbShape].
+  const new({
     required this.color,
+    this.radius = 10,
     this.borderColor,
     this.borderWidth = 1,
     this.shadows = const [],
@@ -69,12 +80,25 @@ class SoftRangeSliderThumbShape extends RangeSliderThumbShape {
     this.cornerRadius,
   });
 
+  /// Radius of the thumbs at rest.
   final double radius;
+
+  /// Fill color.
   final Color color;
+
+  /// Border color (`null` = no border).
   final Color? borderColor;
+
+  /// Border width.
   final double borderWidth;
+
+  /// CSS-style shadows.
   final List<BoxShadow> shadows;
+
+  /// Scale of the thumbs while dragged.
   final double pressedScale;
+
+  /// Corner radius: `null` = circle, 0 = square.
   final double? cornerRadius;
 
   @override
@@ -87,11 +111,11 @@ class SoftRangeSliderThumbShape extends RangeSliderThumbShape {
     Offset center, {
     required Animation<double> activationAnimation,
     required Animation<double> enableAnimation,
+    required SliderThemeData sliderTheme,
     bool isDiscrete = false,
     bool isEnabled = false,
     bool? isOnTop,
     TextDirection? textDirection,
-    required SliderThemeData sliderTheme,
     Thumb? thumb,
     bool? isPressed,
   }) {
@@ -143,7 +167,8 @@ void _paintSoftThumb(
 /// Slider track whose active part is a horizontal gradient.
 class GradientSliderTrackShape extends SliderTrackShape
     with BaseSliderTrackShape {
-  const GradientSliderTrackShape({
+  /// A track with a gradient active part.
+  const new({
     required this.activeColors,
     this.borderColor,
     this.borderWidth = 0,
@@ -153,8 +178,10 @@ class GradientSliderTrackShape extends SliderTrackShape
   /// Gradient colors of the active part (left to right).
   final List<Color> activeColors;
 
-  /// Border around the whole track (0 = none).
+  /// Border around the whole track (`null` = none).
   final Color? borderColor;
+
+  /// Border width.
   final double borderWidth;
 
   /// Corner radius: `null` = pill.
@@ -233,16 +260,24 @@ class GradientSliderTrackShape extends SliderTrackShape
 /// from the first to the second thumb.
 class GradientRangeSliderTrackShape extends RangeSliderTrackShape
     with BaseRangeSliderTrackShape {
-  const GradientRangeSliderTrackShape({
+  /// The same options as [GradientSliderTrackShape].
+  const new({
     required this.activeColors,
     this.borderColor,
     this.borderWidth = 0,
     this.cornerRadius,
   });
 
+  /// Gradient colors of the active part (first to second thumb).
   final List<Color> activeColors;
+
+  /// Border around the whole track (`null` = none).
   final Color? borderColor;
+
+  /// Border width.
   final double borderWidth;
+
+  /// Corner radius: `null` = pill.
   final double? cornerRadius;
 
   @override
@@ -254,9 +289,9 @@ class GradientRangeSliderTrackShape extends RangeSliderTrackShape
     required Animation<double> enableAnimation,
     required Offset startThumbCenter,
     required Offset endThumbCenter,
+    required TextDirection textDirection,
     bool isEnabled = false,
     bool isDiscrete = false,
-    required TextDirection textDirection,
   }) {
     final rect = getPreferredRect(
       parentBox: parentBox,

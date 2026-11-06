@@ -1,14 +1,18 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../export/dart_exporter.dart';
+import '../export/export_format.dart';
 import '../export/usage_notes.dart';
 import '../model/theme_config.dart';
 import 'storage/storage.dart';
 import 'widgets/usage_callout.dart';
 
-Future<void> showExportDialog(BuildContext context, ThemeConfig config) {
+Future<void> showExportDialog(BuildContext context, ThemeConfig config) async {
+  // The formatter is a deferred library: download it on first use.
+  await loadExportFormatter();
+  if (!context.mounted) return;
   return showDialog<void>(
     context: context,
     builder: (_) => _ExportDialog(config: config),
@@ -28,10 +32,21 @@ class _ExportDialogState extends State<_ExportDialog> {
   /// Remembered for the session: whoever picks the package always wants it.
   static bool _usePackage = false;
 
+  /// Material library of the export, remembered for the session too.
+  static ExportTarget _target = ExportTarget.materialUi;
+
   @override
   Widget build(BuildContext context) {
-    final code = exportDart(widget.config, usePackage: _usePackage);
-    final notes = usageNotes(widget.config, usePackage: _usePackage);
+    final code = exportDart(
+      widget.config,
+      usePackage: _usePackage,
+      target: _target,
+    );
+    final notes = usageNotes(
+      widget.config,
+      usePackage: _usePackage,
+      target: _target,
+    );
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
@@ -77,27 +92,6 @@ class _ExportDialogState extends State<_ExportDialog> {
                         ],
                       ),
                     ),
-                    SegmentedButton<bool>(
-                      showSelectedIcon: false,
-                      segments: const [
-                        ButtonSegment(
-                          value: false,
-                          label: Text('Standalone'),
-                          tooltip: 'A single file, no dependencies',
-                        ),
-                        ButtonSegment(
-                          value: true,
-                          label: Text('With package'),
-                          tooltip:
-                              'Shorter file: the support classes come from '
-                              'the materialcraft package',
-                        ),
-                      ],
-                      selected: {_usePackage},
-                      onSelectionChanged: (v) =>
-                          setState(() => _usePackage = v.first),
-                    ),
-                    const SizedBox(width: 12),
                     FilledButton.icon(
                       onPressed: () => downloadText(
                         'app_theme.dart',
@@ -129,6 +123,49 @@ class _ExportDialogState extends State<_ExportDialog> {
                       tooltip: 'Close',
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    SegmentedButton<bool>(
+                      showSelectedIcon: false,
+                      segments: const [
+                        ButtonSegment(
+                          value: false,
+                          label: Text('Standalone'),
+                          tooltip: 'A single file, no dependencies',
+                        ),
+                        ButtonSegment(
+                          value: true,
+                          label: Text('With package'),
+                          tooltip:
+                              'Shorter file: the support classes come from '
+                              'the materialcraft package',
+                        ),
+                      ],
+                      selected: {_usePackage},
+                      onSelectionChanged: (v) =>
+                          setState(() => _usePackage = v.first),
+                    ),
+                    SegmentedButton<ExportTarget>(
+                      showSelectedIcon: false,
+                      segments: [
+                        for (final t in ExportTarget.values)
+                          ButtonSegment(
+                            value: t,
+                            label: Text(t.label),
+                            tooltip: t.description,
+                          ),
+                      ],
+                      selected: {_target},
+                      onSelectionChanged: (v) =>
+                          setState(() => _target = v.first),
                     ),
                   ],
                 ),

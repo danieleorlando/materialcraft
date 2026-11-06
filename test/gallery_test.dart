@@ -3,14 +3,17 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:materialcraft_app/export/dart_exporter.dart';
+import 'package:materialcraft_app/export/export_format.dart';
 import 'package:materialcraft_app/model/gallery.dart';
 import 'package:materialcraft_app/model/theme_builder.dart';
 
 void main() {
+  setUpAll(loadExportFormatter);
+
   final files = Directory('gallery').listSync().whereType<File>().toList()
     ..sort((a, b) => a.path.compareTo(b.path));
 

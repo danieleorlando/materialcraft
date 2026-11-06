@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The 15 Material 3 TextTheme styles, with their default values.
 enum TextRole {

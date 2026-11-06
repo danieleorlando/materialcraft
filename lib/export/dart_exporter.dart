@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../model/color_ref.dart';
 import '../model/shadow_token.dart';
@@ -8,6 +8,7 @@ import '../model/theme_builder.dart';
 import '../model/theme_config.dart';
 import '../model/typography_config.dart';
 import 'button_skin_source.dart';
+import 'export_format.dart';
 import 'usage_notes.dart';
 
 /// Generates `app_theme.dart` with the configured theme.
@@ -16,8 +17,17 @@ import 'usage_notes.dart';
 /// AppSwitch, HardShadowBorder, …); without it, the runtime sources are
 /// included in the file, which stays self-contained.
 ///
+/// [target] picks the Material library the file imports: `material_ui`
+/// (Flutter 3.47+) or the framework's `flutter/material`.
+///
+/// Call `loadExportFormatter()` once before exporting.
+///
 /// Mirrors `model/theme_builder.dart`.
-String exportDart(ThemeConfig c, {bool usePackage = false}) {
+String exportDart(
+  ThemeConfig c, {
+  bool usePackage = false,
+  ExportTarget target = ExportTarget.materialUi,
+}) {
   _currentConfig = c;
   // Buttons drawn with ButtonSkin: the skin becomes a variable reused
   // by the theme and by the extra sizes.
@@ -63,7 +73,7 @@ String exportDart(ThemeConfig c, {bool usePackage = false}) {
       multiline: true,
     ).code(false, '    ');
   }
-  body.writeln('    final colorScheme = $scheme;');
+  body.writeln('    final colorScheme = dynamicScheme ?? $scheme;');
 
   final baseArgs = <(String?, _Expr)>[
     ('colorScheme', _lit('colorScheme', isConst: false)),
@@ -139,7 +149,7 @@ String exportDart(ThemeConfig c, {bool usePackage = false}) {
   out.writeln('// Generated with MaterialCraft by Daniele Orlando.');
   out.writeln('// https://materialcraft.danieleorlando.me');
   // The same instructions as the export's "How to use it" tab.
-  for (final note in usageNotes(c, usePackage: usePackage)) {
+  for (final note in usageNotes(c, usePackage: usePackage, target: target)) {
     out.writeln('//');
     out.writeln('// ${note.title}${note.required ? ' (required)' : ''}');
     for (final line in _wrap(note.body, 76)) {
@@ -154,12 +164,11 @@ String exportDart(ThemeConfig c, {bool usePackage = false}) {
     out.writeln(
       "// Instead of bundling assets, with the google_fonts package replace",
     );
-    out.writeln(
-      "// `fontFamily: '$font'` with `textTheme: GoogleFonts.getTextTheme('$font', ...)`.",
-    );
+    out.writeln("// `fontFamily: '$font'` with");
+    out.writeln("// `textTheme: GoogleFonts.getTextTheme('$font', ...)`.");
   }
   out.writeln();
-  out.writeln("import 'package:flutter/material.dart';");
+  out.writeln("import '${target.import}';");
   if (usePackage) {
     out.writeln("import 'package:materialcraft/materialcraft.dart';");
     // Re-export the package: files that import only app_theme.dart can use
@@ -168,14 +177,28 @@ String exportDart(ThemeConfig c, {bool usePackage = false}) {
     out.writeln("export 'package:materialcraft/materialcraft.dart';");
   }
   out.writeln();
+  out.writeln(
+    '/// The app theme: pass it to `MaterialApp(theme:, darkTheme:)`.',
+  );
   out.writeln('abstract final class AppTheme {');
+  out.writeln('  /// Seed of the generated color scheme.');
   out.writeln('  static const seedColor = Color(0x${hexArgb(c.seedColor)});');
   out.writeln();
-  out.writeln('  static ThemeData light() => _build(Brightness.light);');
+  out.writeln('  /// Light theme.');
+  out.writeln('  ///');
+  out.writeln('  /// [dynamicScheme] replaces the color scheme, e.g. with the');
+  out.writeln('  /// wallpaper colors of Android 12+ (package dynamic_color).');
+  out.writeln('  /// Colors that the theme fixes outside the scheme stay.');
+  out.writeln('  static ThemeData light([ColorScheme? dynamicScheme]) =>');
+  out.writeln('      _build(Brightness.light, dynamicScheme);');
   out.writeln();
-  out.writeln('  static ThemeData dark() => _build(Brightness.dark);');
+  out.writeln('  /// Dark theme; [dynamicScheme] as in [light].');
+  out.writeln('  static ThemeData dark([ColorScheme? dynamicScheme]) =>');
+  out.writeln('      _build(Brightness.dark, dynamicScheme);');
   out.writeln();
-  out.writeln('  static ThemeData _build(Brightness brightness) {');
+  out.writeln(
+    '  static ThemeData _build(Brightness brightness, ColorScheme? dynamicScheme) {',
+  );
   out.write(isDarkLine);
   out.write(bodyText);
   out.writeln('  }');
@@ -189,9 +212,46 @@ String exportDart(ThemeConfig c, {bool usePackage = false}) {
     out.writeln('          : c.withValues(alpha: c.a * 0.5);');
   }
   out.writeln('}');
-  if (!usePackage) _writeRuntimeSources(out, c, usesSkin: usesSkin);
+  if (!usePackage) {
+    final runtime = StringBuffer();
+    _writeRuntimeSources(runtime, c, usesSkin: usesSkin);
+    out.write(
+      target == ExportTarget.flutterMaterial
+          ? legacyConstructorSyntax(runtime.toString())
+          : runtime,
+    );
+  }
 
-  return out.toString();
+  return formatExport(out.toString(), languageVersion: target.dartVersion);
+}
+
+/// Rewrites the Dart 3.13 constructor syntax of the runtime sources
+/// (`const new(...)`, `const new named(...)`, `factory named(...)`) with the
+/// class name, for the SDKs before Flutter 3.47.
+String legacyConstructorSyntax(String source) {
+  final classDecl = RegExp(
+    r'^(?:(?:abstract|base|final|interface|sealed)\s+)*class\s+(\w+)',
+  );
+  String? cls;
+  return [
+    for (final line in source.split('\n'))
+      () {
+        cls = classDecl.firstMatch(line)?.group(1) ?? cls;
+        return line
+            .replaceAllMapped(
+              RegExp(r'^(\s+(?:const\s+)?)new\s+(\w+)\('),
+              (m) => '${m[1]}$cls.${m[2]}(',
+            )
+            .replaceAllMapped(
+              RegExp(r'^(\s+(?:const\s+)?)new\('),
+              (m) => '${m[1]}$cls(',
+            )
+            .replaceAllMapped(
+              RegExp(r'^(\s+factory\s+)(\w+)\('),
+              (m) => m[2] == cls ? m[0]! : '${m[1]}$cls.${m[2]}(',
+            );
+      }(),
+  ].join('\n');
 }
 
 /// Runtime sources (the same classes as the `materialcraft` package),

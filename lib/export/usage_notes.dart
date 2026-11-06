@@ -33,9 +33,61 @@ class UsageNote {
   final String language;
 }
 
+/// The Material library the exported file is written for.
+enum ExportTarget {
+  /// `package:material_ui`, Material as a package (Flutter 3.47+).
+  materialUi(
+    label: 'material_ui',
+    description: 'Flutter 3.47+, apps migrated to the material_ui package',
+    import: 'package:material_ui/material_ui.dart',
+    packageVersion: '^0.2.0',
+    dynamicColorVersion: '^2.1.0',
+    dartVersion: (3, 13),
+  ),
+
+  /// `package:flutter/material.dart`, Material inside the framework.
+  flutterMaterial(
+    label: 'flutter/material',
+    description: 'Flutter before 3.47, or apps still on flutter/material',
+    import: 'package:flutter/material.dart',
+    packageVersion: '^0.1.0',
+    dynamicColorVersion: '^1.8.1',
+    // Flutter 3.35, the oldest supported by materialcraft 0.1.x.
+    dartVersion: (3, 9),
+  );
+
+  const ExportTarget({
+    required this.label,
+    required this.description,
+    required this.import,
+    required this.packageVersion,
+    required this.dynamicColorVersion,
+    required this.dartVersion,
+  });
+
+  final String label;
+  final String description;
+
+  /// Import of the Material library in the exported file.
+  final String import;
+
+  /// Version of the `materialcraft` package stated in the export.
+  final String packageVersion;
+
+  /// Version of `dynamic_color` built on the same Material library.
+  final String dynamicColorVersion;
+
+  /// Oldest Dart version (major, minor) the exported code must compile on.
+  final (int, int) dartVersion;
+}
+
 /// The instructions this theme needs, in the order to apply them.
-List<UsageNote> usageNotes(ThemeConfig c, {bool usePackage = false}) => [
-  if (usePackage) packageNote(),
+List<UsageNote> usageNotes(
+  ThemeConfig c, {
+  bool usePackage = false,
+  ExportTarget target = ExportTarget.materialUi,
+}) => [
+  if (usePackage) packageNote(target),
   setupNote(),
   ?fontsNote(c),
   for (final kind in ButtonKind.values)
@@ -44,6 +96,7 @@ List<UsageNote> usageNotes(ThemeConfig c, {bool usePackage = false}) => [
   if (c.surfaces[SurfaceKind.switchControl]!.hasSwitchGeometry)
     switchNote(usePackage: usePackage),
   if (menuNeedsNoClip(c)) menuNote(),
+  dynamicColorNote(target),
 ];
 
 bool menuNeedsNoClip(ThemeConfig c) {
@@ -51,19 +104,18 @@ bool menuNeedsNoClip(ThemeConfig c) {
   return !menu.isEmpty && menu.hasShapeShadow;
 }
 
-/// Version of the `materialcraft` package stated in the export.
-const materialcraftPackageVersion = '^0.1.0';
-
-UsageNote packageNote() => const UsageNote(
+UsageNote packageNote([
+  ExportTarget target = ExportTarget.materialUi,
+]) => UsageNote(
   id: 'package',
   title: 'Add the materialcraft package',
   body:
       'The theme uses the classes of the materialcraft package (ButtonSkin, '
       'AppSwitch, HardShadowBorder, …) instead of bundling them in the file. '
       'Upgrading the package brings you fixes without exporting the theme '
-      'again.',
+      'again.${target == ExportTarget.flutterMaterial ? ' The 0.1.x versions are the ones built on flutter/material.' : ''}',
   after: '''dependencies:
-  materialcraft: $materialcraftPackageVersion''',
+  materialcraft: ${target.packageVersion}''',
   required: true,
   language: 'yaml',
 );
@@ -198,6 +250,30 @@ ListTile(
 )''',
   required: true,
 );
+
+UsageNote dynamicColorNote([ExportTarget target = ExportTarget.materialUi]) =>
+    UsageNote(
+      id: 'dynamicColor',
+      title: 'Dynamic color (optional)',
+      body:
+          'On Android 12+ the theme can take its color scheme from the '
+          'wallpaper: add dynamic_color ${target.dynamicColorVersion} and pass '
+          'the system schemes to AppTheme. Where they are not available (null) '
+          "the theme's own scheme is used. Colors that the theme sets outside "
+          'the scheme do not change.',
+      before: '''MaterialApp(
+  theme: AppTheme.light(),
+  darkTheme: AppTheme.dark(),
+  home: ...,
+)''',
+      after: '''DynamicColorBuilder(
+  builder: (light, dark) => MaterialApp(
+    theme: AppTheme.light(light),
+    darkTheme: AppTheme.dark(dark),
+    home: ...,
+  ),
+)''',
+    );
 
 UsageNote menuNote() => const UsageNote(
   id: 'menu',

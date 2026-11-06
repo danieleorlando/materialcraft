@@ -6,7 +6,8 @@ const buttonSkinSource = r'''
 /// state.
 @immutable
 class ButtonSkinState {
-  const ButtonSkinState({
+  /// Look of one state; unset fields inherit from the normal state.
+  const new({
     this.colors,
     this.foreground,
     this.border,
@@ -16,8 +17,14 @@ class ButtonSkinState {
 
   /// One color = solid fill; two = vertical gradient (top → bottom).
   final List<Color>? colors;
+
+  /// Text and icon color.
   final Color? foreground;
+
+  /// Border color (the width is [ButtonSkin.borderWidth]).
   final Color? border;
+
+  /// CSS-style shadows, painted outside the button.
   final List<BoxShadow>? shadows;
 
   /// Offset of the button in this state (does not affect layout).
@@ -31,7 +38,8 @@ class ButtonSkinState {
 /// Usage: `skin.applyTo(FilledButton.styleFrom(...))`.
 @immutable
 class ButtonSkin {
-  const ButtonSkin({
+  /// A skin; [normal] is the look at rest, the other states override it.
+  const new({
     required this.normal,
     this.hovered = const ButtonSkinState(),
     this.pressed = const ButtonSkinState(),
@@ -47,12 +55,25 @@ class ButtonSkin {
     this.duration = const Duration(milliseconds: 150),
   });
 
+  /// Look at rest.
   final ButtonSkinState normal;
+
+  /// Look under the pointer.
   final ButtonSkinState hovered;
+
+  /// Look while pressed.
   final ButtonSkinState pressed;
+
+  /// Look with the keyboard focus.
   final ButtonSkinState focused;
+
+  /// Look when disabled.
   final ButtonSkinState disabled;
+
+  /// Corner radius.
   final double radius;
+
+  /// Border width (0 = no border).
   final double borderWidth;
 
   /// Scale of the button while pressed (1 = no effect).
@@ -60,6 +81,8 @@ class ButtonSkin {
 
   /// Color of the keyboard focus ring (`null` = no ring).
   final Color? focusRing;
+
+  /// Width of the focus ring.
   final double focusRingWidth;
 
   /// Gap between the button and the focus ring.
@@ -142,6 +165,8 @@ class ButtonSkin {
     return 0;
   }
 
+  /// Returns [base] painted by this skin (background, border, shadows,
+  /// focus ring and press effect); the other properties of [base] stay.
   ButtonStyle applyTo(ButtonStyle base) {
     final foreground = WidgetStateProperty.resolveWith(
       (states) => resolve(states).foreground,
@@ -304,7 +329,7 @@ class ButtonSkin {
 
 /// Paints the shadows only outside the button's rounded rectangle.
 class _OuterShadowPainter extends CustomPainter {
-  const _OuterShadowPainter(this.shadows, this.radius);
+  const new(this.shadows, this.radius);
 
   final List<BoxShadow> shadows;
   final double radius;
@@ -315,13 +340,14 @@ class _OuterShadowPainter extends CustomPainter {
       Offset.zero & size,
       Radius.circular(radius),
     );
-    canvas.save();
-    canvas.clipPath(
-      Path()
-        ..fillType = PathFillType.evenOdd
-        ..addRect(shape.outerRect.inflate(1000))
-        ..addRRect(shape),
-    );
+    canvas
+      ..save()
+      ..clipPath(
+        Path()
+          ..fillType = PathFillType.evenOdd
+          ..addRect(shape.outerRect.inflate(1000))
+          ..addRRect(shape),
+      );
     for (final s in shadows) {
       canvas.drawRRect(
         shape.shift(s.offset).inflate(s.spreadRadius),
@@ -340,7 +366,7 @@ class _OuterShadowPainter extends CustomPainter {
 /// a clip area enlarged by [ButtonSkin.bleed], so shadows and the focus ring
 /// are not clipped.
 class _BleedShape extends OutlinedBorder {
-  const _BleedShape(this.radius);
+  const new(this.radius);
 
   final double radius;
 
@@ -381,26 +407,55 @@ class _BleedShape extends OutlinedBorder {
 const appButtonStylesSource = r'''
 /// Buttons that can have an extra style in the theme.
 enum AppButtonKind {
+  /// ElevatedButton.
   elevated,
+
+  /// FilledButton.
   filled,
+
+  /// OutlinedButton.
   outlined,
+
+  /// TextButton.
   text,
+
+  /// IconButton.
   icon,
+
+  /// Destructive action (a FilledButton with the danger style).
   danger,
+
+  /// Button without background or border until hovered.
   ghost,
+
+  /// IconButton with the secondary style.
   iconSecondary,
 }
 
 /// Button sizes. `medium` is the one defined by the theme.
-enum AppButtonSize { medium, large, small, xs }
+enum AppButtonSize {
+  /// The size of the button's Material theme.
+  medium,
+
+  /// Larger than medium.
+  large,
+
+  /// Smaller than medium.
+  small,
+
+  /// The smallest size.
+  xs,
+}
 
 /// Button styles that Material has no theme for: variants (e.g. danger) and
 /// sizes (large, small, xs). Read them with
 /// [AppButtonStylesContext.buttonStyle].
 @immutable
 class AppButtonStyles extends ThemeExtension<AppButtonStyles> {
-  const AppButtonStyles([this.styles = const {}]);
+  /// Extra styles, by button kind and size.
+  const new([this.styles = const {}]);
 
+  /// The styles, by button kind and size.
   final Map<(AppButtonKind, AppButtonSize), ButtonStyle> styles;
 
   /// Style for [kind] and [size]; `null` means "use the button's theme"
@@ -424,6 +479,7 @@ class AppButtonStyles extends ThemeExtension<AppButtonStyles> {
       other == null || t < 0.5 ? this : other;
 }
 
+/// Reads [AppButtonStyles] from the theme.
 extension AppButtonStylesContext on BuildContext {
   /// E.g. `FilledButton(style: context.buttonStyle(AppButtonKind.danger), ...)`
   /// or `OutlinedButton(style: context.buttonStyle(AppButtonKind.outlined,
@@ -439,9 +495,10 @@ const sliderShapesSource = r'''
 /// Slider thumb: filled circle with a border and CSS-style shadows. It grows
 /// slightly while dragged.
 class SoftSliderThumbShape extends SliderComponentShape {
-  const SoftSliderThumbShape({
-    this.radius = 10,
+  /// A thumb of [color] with an optional border and shadows.
+  const new({
     required this.color,
+    this.radius = 10,
     this.borderColor,
     this.borderWidth = 1,
     this.shadows = const [],
@@ -449,10 +506,19 @@ class SoftSliderThumbShape extends SliderComponentShape {
     this.cornerRadius,
   });
 
+  /// Radius of the thumb at rest.
   final double radius;
+
+  /// Fill color.
   final Color color;
+
+  /// Border color (`null` = no border).
   final Color? borderColor;
+
+  /// Border width.
   final double borderWidth;
+
+  /// CSS-style shadows.
   final List<BoxShadow> shadows;
 
   /// Scale of the thumb while dragged.
@@ -495,9 +561,10 @@ class SoftSliderThumbShape extends SliderComponentShape {
 
 /// Like [SoftSliderThumbShape], for the two thumbs of a `RangeSlider`.
 class SoftRangeSliderThumbShape extends RangeSliderThumbShape {
-  const SoftRangeSliderThumbShape({
-    this.radius = 10,
+  /// The same options as [SoftSliderThumbShape].
+  const new({
     required this.color,
+    this.radius = 10,
     this.borderColor,
     this.borderWidth = 1,
     this.shadows = const [],
@@ -505,12 +572,25 @@ class SoftRangeSliderThumbShape extends RangeSliderThumbShape {
     this.cornerRadius,
   });
 
+  /// Radius of the thumbs at rest.
   final double radius;
+
+  /// Fill color.
   final Color color;
+
+  /// Border color (`null` = no border).
   final Color? borderColor;
+
+  /// Border width.
   final double borderWidth;
+
+  /// CSS-style shadows.
   final List<BoxShadow> shadows;
+
+  /// Scale of the thumbs while dragged.
   final double pressedScale;
+
+  /// Corner radius: `null` = circle, 0 = square.
   final double? cornerRadius;
 
   @override
@@ -523,11 +603,11 @@ class SoftRangeSliderThumbShape extends RangeSliderThumbShape {
     Offset center, {
     required Animation<double> activationAnimation,
     required Animation<double> enableAnimation,
+    required SliderThemeData sliderTheme,
     bool isDiscrete = false,
     bool isEnabled = false,
     bool? isOnTop,
     TextDirection? textDirection,
-    required SliderThemeData sliderTheme,
     Thumb? thumb,
     bool? isPressed,
   }) {
@@ -579,7 +659,8 @@ void _paintSoftThumb(
 /// Slider track whose active part is a horizontal gradient.
 class GradientSliderTrackShape extends SliderTrackShape
     with BaseSliderTrackShape {
-  const GradientSliderTrackShape({
+  /// A track with a gradient active part.
+  const new({
     required this.activeColors,
     this.borderColor,
     this.borderWidth = 0,
@@ -589,8 +670,10 @@ class GradientSliderTrackShape extends SliderTrackShape
   /// Gradient colors of the active part (left to right).
   final List<Color> activeColors;
 
-  /// Border around the whole track (0 = none).
+  /// Border around the whole track (`null` = none).
   final Color? borderColor;
+
+  /// Border width.
   final double borderWidth;
 
   /// Corner radius: `null` = pill.
@@ -669,16 +752,24 @@ class GradientSliderTrackShape extends SliderTrackShape
 /// from the first to the second thumb.
 class GradientRangeSliderTrackShape extends RangeSliderTrackShape
     with BaseRangeSliderTrackShape {
-  const GradientRangeSliderTrackShape({
+  /// The same options as [GradientSliderTrackShape].
+  const new({
     required this.activeColors,
     this.borderColor,
     this.borderWidth = 0,
     this.cornerRadius,
   });
 
+  /// Gradient colors of the active part (first to second thumb).
   final List<Color> activeColors;
+
+  /// Border around the whole track (`null` = none).
   final Color? borderColor;
+
+  /// Border width.
   final double borderWidth;
+
+  /// Corner radius: `null` = pill.
   final double? cornerRadius;
 
   @override
@@ -690,9 +781,9 @@ class GradientRangeSliderTrackShape extends RangeSliderTrackShape
     required Animation<double> enableAnimation,
     required Offset startThumbCenter,
     required Offset endThumbCenter,
+    required TextDirection textDirection,
     bool isEnabled = false,
     bool isDiscrete = false,
-    required TextDirection textDirection,
   }) {
     final rect = getPreferredRect(
       parentBox: parentBox,
@@ -758,7 +849,8 @@ const appSwitchSource = r'''
 /// `SwitchThemeData` (track, thumb, outline), just like for `Switch`.
 @immutable
 class AppSwitchStyle extends ThemeExtension<AppSwitchStyle> {
-  const AppSwitchStyle({
+  /// Switch geometry; the defaults are Material 3's.
+  const new({
     this.width = 52,
     this.height = 32,
     this.thumbSize = 24,
@@ -771,18 +863,26 @@ class AppSwitchStyle extends ThemeExtension<AppSwitchStyle> {
 
   /// Outer size of the track, border included (like CSS border-box).
   final double width;
+
+  /// Outer height of the track, border included.
   final double height;
 
   /// Side of the thumb.
   final double thumbSize;
 
-  /// Corner radii: `null` means pill / circle.
+  /// Corner radius of the track (`null` = pill).
   final double? trackRadius;
+
+  /// Corner radius of the thumb (`null` = circle).
   final double? thumbRadius;
 
   /// The thumb has the same outline as the track.
   final bool thumbBorder;
+
+  /// Shadows of the thumb.
   final List<BoxShadow> thumbShadows;
+
+  /// Duration of the thumb movement.
   final Duration duration;
 
   @override
@@ -820,17 +920,25 @@ class AppSwitchStyle extends ThemeExtension<AppSwitchStyle> {
 /// AppSwitch(value: on, onChanged: (v) => setState(() => on = v))
 /// ```
 class AppSwitch extends StatefulWidget {
-  const AppSwitch({
-    super.key,
+  /// A switch; [value] and [onChanged] work like in `Switch`.
+  const new({
     required this.value,
     required this.onChanged,
+    super.key,
     this.focusNode,
     this.autofocus = false,
   });
 
+  /// Whether the switch is on.
   final bool value;
+
+  /// Called with the new value; `null` disables the switch.
   final ValueChanged<bool>? onChanged;
+
+  /// Focus node, as in `Switch`.
   final FocusNode? focusNode;
+
+  /// Whether to take the focus when first shown.
   final bool autofocus;
 
   @override
@@ -987,7 +1095,8 @@ const hardShadowBorderSource = r'''
 /// Use it as `shape:` in themes (card, dialog, menu, chip, FAB…): the shadow
 /// is painted only outside the container, so it never covers the content.
 class HardShadowBorder extends OutlinedBorder {
-  const HardShadowBorder({
+  /// A border with a hard or soft shadow; [side] is the border.
+  const new({
     super.side,
     this.radius = 0,
     this.shadowOffset = Offset.zero,
@@ -996,9 +1105,16 @@ class HardShadowBorder extends OutlinedBorder {
     this.shadows = const [],
   });
 
+  /// Corner radius.
   final double radius;
+
+  /// Offset of the hard shadow (zero = no hard shadow, unless spread).
   final Offset shadowOffset;
+
+  /// Color of the hard shadow.
   final Color shadowColor;
+
+  /// Spread of the hard shadow.
   final double shadowSpread;
 
   /// Soft (CSS) shadows, painted only outside the container.
@@ -1064,28 +1180,15 @@ class HardShadowBorder extends OutlinedBorder {
 
   @override
   ShapeBorder? lerpFrom(ShapeBorder? a, double t) {
-    if (a is HardShadowBorder) return _lerp(a, this, t);
+    if (a is HardShadowBorder) return _lerpHardShadow(a, this, t);
     return super.lerpFrom(a, t);
   }
 
   @override
   ShapeBorder? lerpTo(ShapeBorder? b, double t) {
-    if (b is HardShadowBorder) return _lerp(this, b, t);
+    if (b is HardShadowBorder) return _lerpHardShadow(this, b, t);
     return super.lerpTo(b, t);
   }
-
-  static HardShadowBorder _lerp(
-    HardShadowBorder a,
-    HardShadowBorder b,
-    double t,
-  ) => HardShadowBorder(
-    side: BorderSide.lerp(a.side, b.side, t),
-    radius: _mix(a.radius, b.radius, t),
-    shadowOffset: Offset.lerp(a.shadowOffset, b.shadowOffset, t)!,
-    shadowColor: Color.lerp(a.shadowColor, b.shadowColor, t)!,
-    shadowSpread: _mix(a.shadowSpread, b.shadowSpread, t),
-    shadows: BoxShadow.lerpList(a.shadows, b.shadows, t) ?? const [],
-  );
 
   @override
   bool operator ==(Object other) =>
@@ -1125,13 +1228,14 @@ void paintSoftShadows(
 ) {
   if (shadows.isEmpty) return;
   final shape = RRect.fromRectAndRadius(rect, Radius.circular(radius));
-  canvas.save();
-  canvas.clipPath(
-    Path()
-      ..fillType = PathFillType.evenOdd
-      ..addRect(rect.inflate(1000))
-      ..addRRect(shape),
-  );
+  canvas
+    ..save()
+    ..clipPath(
+      Path()
+        ..fillType = PathFillType.evenOdd
+        ..addRect(rect.inflate(1000))
+        ..addRRect(shape),
+    );
   for (final s in shadows) {
     canvas.drawRRect(
       shape.shift(s.offset).inflate(s.spreadRadius),
@@ -1140,6 +1244,19 @@ void paintSoftShadows(
   }
   canvas.restore();
 }
+
+HardShadowBorder _lerpHardShadow(
+  HardShadowBorder a,
+  HardShadowBorder b,
+  double t,
+) => HardShadowBorder(
+  side: BorderSide.lerp(a.side, b.side, t),
+  radius: _mix(a.radius, b.radius, t),
+  shadowOffset: Offset.lerp(a.shadowOffset, b.shadowOffset, t)!,
+  shadowColor: Color.lerp(a.shadowColor, b.shadowColor, t)!,
+  shadowSpread: _mix(a.shadowSpread, b.shadowSpread, t),
+  shadows: BoxShadow.lerpList(a.shadows, b.shadows, t) ?? const [],
+);
 
 double _mix(double a, double b, double t) => a + (b - a) * t;
 
@@ -1160,21 +1277,23 @@ void paintHardShadow(
   // Clip to the outside of the shape, then paint: on the web (CanvasKit)
   // Path.combine(difference) gets concentric rectangles wrong (focus ring)
   // and fills the inside too.
-  canvas.save();
-  canvas.clipPath(
-    Path()
-      ..fillType = PathFillType.evenOdd
-      ..addRect(outer.outerRect.inflate(1))
-      ..addRRect(inner),
-  );
-  canvas.drawRRect(outer, Paint()..color = color);
-  canvas.restore();
+  canvas
+    ..save()
+    ..clipPath(
+      Path()
+        ..fillType = PathFillType.evenOdd
+        ..addRect(outer.outerRect.inflate(1))
+        ..addRRect(inner),
+    )
+    ..drawRRect(outer, Paint()..color = color)
+    ..restore();
 }
 
 /// Text field border with a hard shadow (per state, via
 /// `WidgetStateInputBorder.resolveWith`).
 class HardShadowInputBorder extends OutlineInputBorder {
-  const HardShadowInputBorder({
+  /// A text field border with a hard or soft shadow.
+  const new({
     super.borderSide,
     super.borderRadius = BorderRadius.zero,
     super.gapPadding,
@@ -1184,7 +1303,10 @@ class HardShadowInputBorder extends OutlineInputBorder {
     this.shadows = const [],
   });
 
+  /// Offset of the hard shadow.
   final Offset shadowOffset;
+
+  /// Color of the hard shadow.
   final Color shadowColor;
 
   /// Shadow spread: with a zero offset it becomes a ring (focus ring).
